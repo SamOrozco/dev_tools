@@ -58,6 +58,13 @@ func main() {
 		}
 		if handleResponse(resp, js) {
 			executeSuccess(config)
+			println("success")
+			return
+		}
+
+		// every 10 print which req we're on
+		if i%10 == 0 {
+			println(fmt.Sprintf("on request %d", i))
 		}
 
 		// wait for defined period of time
@@ -75,9 +82,13 @@ func executeSuccess(config *Config) {
 
 func handleResponse(resp *http.Response, js string) bool {
 
+	if resp == nil {
+		return false
+	}
+
 	respBytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		panic(err)
+		println(err.Error())
 	}
 	vm.Set("statusCode", resp.StatusCode)
 	vm.Set("responseBody", string(respBytes))

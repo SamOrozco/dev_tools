@@ -1,3 +1,4 @@
 var code = statusCode;
 var body = responseBody;
-var def = code === 200;
+var userObject = JSON.parse(body);
+var def = userObject["user_name"] === "sam";

@@ -1,7 +1,7 @@
 endpoint:
-  url: 'http://google.com'
+  url: 'http://localhost:9005/test'
   method: 'GET'
 js_file: 'C:\Users\samue\projects\dev_tools\endpoint_watcher\examples\template_json.js'
 limit: 100
 interval_millis: 1000
-success_message: 'Google returned a 200'
+success_message: 'user equals sam'
