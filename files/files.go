@@ -1,6 +1,7 @@
 package files
 
 import (
+	"io/ioutil"
 	"os"
 	"strings"
 )
@@ -39,4 +40,8 @@ func JoinSegmentsOfFilePath(segments ...string) string {
 
 func RemoveDir(dirLocation string) error {
 	return os.RemoveAll(dirLocation)
+}
+
+func ReadBytesFromFile(fileLocation string) ([]byte, error) {
+	return ioutil.ReadFile(fileLocation)
 }

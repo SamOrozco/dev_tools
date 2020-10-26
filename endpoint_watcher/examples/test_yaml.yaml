@@ -1,0 +1,7 @@
+endpoint:
+  url: 'http://google.com'
+  method: 'GET'
+js_file: 'C:\Users\samue\projects\dev_tools\endpoint_watcher\examples\template_json.js'
+limit: 100
+interval_millis: 1000
+success_message: 'Google returned a 200'
