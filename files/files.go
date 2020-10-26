@@ -36,3 +36,7 @@ func GetHomeDirLocation() string {
 func JoinSegmentsOfFilePath(segments ...string) string {
 	return strings.Join(segments, PATH_SEPARATOR)
 }
+
+func RemoveDir(dirLocation string) error {
+	return os.RemoveAll(dirLocation)
+}

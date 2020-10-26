@@ -3,9 +3,11 @@ package main
 import (
 	"dev_tools/files"
 	"fmt"
+	"github.com/fatih/color"
 	"github.com/google/uuid"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 const TEMP_DIR_NAME = "temp_repos"
@@ -24,6 +26,16 @@ func main() {
 }
 
 func handleTempGitClone(args []string) {
+
+	// the only other command is clean if the first arg is "clean" then clean Dir
+	if strings.ToLower(args[0]) == "clean" {
+		if err := files.RemoveDir(TEMP_REPO_LOCATION); err != nil {
+			panic(err)
+		}
+		println(fmt.Sprintf("cleaned dir %s", TEMP_REPO_LOCATION))
+		return
+	}
+
 	switch len(args) {
 	case 1:
 		handleCommand(args[0], "", "code")
@@ -48,7 +60,7 @@ func handleCommand(repo, branch, openOption string) {
 			panic(err)
 		}
 	}
-	println(fmt.Sprintf("clone repo %s into dir [%s]", repo, tempDirLocation))
+	color.Cyan("clone repo %s into dir [%s]", repo, tempDirLocation)
 
 	// open option
 	if openOption == "none" {
