@@ -76,9 +76,13 @@ func main() {
 }
 
 func executeSuccess(config *Config) {
-	err := beeep.Alert("Test Passed", config.SuccessMessage, "assets/information.png")
-	if err != nil {
-		panic(err)
+
+	// desktop notification
+	if strings.ToLower(config.Success.Type) == "desktop" {
+		err := beeep.Alert("Test Passed", config.Success.Message, "assets/information.png")
+		if err != nil {
+			panic(err)
+		}
 	}
 }
 

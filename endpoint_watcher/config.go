@@ -7,7 +7,7 @@ type Config struct {
 	JsFile         string    `yaml:"js_file"`
 	Limit          int       `yaml:"limit"`
 	IntervalMillis int       `yaml:"interval_millis"`
-	SuccessMessage string    `yaml:"success_message"`
+	Success        *Success  `yaml:"success"`
 	Auth           *Auth     `yaml:"auth"`
 }
 
@@ -24,4 +24,9 @@ type Auth struct {
 	Type     string `yaml:"type"`
 	Username string `yaml:"username"`
 	Password string `yaml:"password"`
+}
+
+type Success struct {
+	Type    string `yaml:"type"`
+	Message string `yaml:"message"`
 }
