@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"dev_tools/files"
 	"fmt"
 	"github.com/gen2brain/beeep"
@@ -144,6 +145,7 @@ func buildRequest(endpoint *Endpoint) http.Request {
 		Method: endpoint.Method,
 		URL:    uri,
 		Header: http.Header{},
+		Body:   ioutil.NopCloser(bytes.NewReader([]byte(endpoint.Body))),
 	}
 }
 

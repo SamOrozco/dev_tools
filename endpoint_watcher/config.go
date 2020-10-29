@@ -18,6 +18,7 @@ func (config Config) String() string {
 type Endpoint struct {
 	Url    string `yaml:"url"`
 	Method string `yaml:"method"`
+	Body   string `yaml:"body"`
 }
 
 type Auth struct {
