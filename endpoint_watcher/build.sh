@@ -1,3 +1,3 @@
-go build -o ewt .
-cp ewt ~/bin
-rm ewt
+go build -o $1 .
+cp $1 ~/bin
+rm $1
