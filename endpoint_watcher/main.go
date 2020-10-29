@@ -77,12 +77,33 @@ func main() {
 
 func executeSuccess(config *Config) {
 
+	if config.Success == nil {
+		handleBasicSuccess()
+	}
+
+	successType := strings.ToLower(config.Success.Type)
 	// desktop notification
-	if strings.ToLower(config.Success.Type) == "desktop" {
+	if successType == "desktop" {
 		err := beeep.Alert("Test Passed", config.Success.Message, "assets/information.png")
 		if err != nil {
 			panic(err)
 		}
+	} else if successType == "webhook" {
+		if config.Success.Endpoint == nil {
+			panic("success configured for webhook but no endpoint supplied")
+		}
+		successRequest := buildRequest(config.Success.Endpoint)
+		_, err := httpClient.Do(&successRequest)
+		if err != nil {
+			panic(err)
+		}
+	}
+}
+
+func handleBasicSuccess() {
+	err := beeep.Alert("Test Passed", "Endpoint response passed condition", "assets/information.png")
+	if err != nil {
+		panic(err)
 	}
 }
 

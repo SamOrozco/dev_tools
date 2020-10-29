@@ -27,6 +27,7 @@ type Auth struct {
 }
 
 type Success struct {
-	Type    string `yaml:"type"`
-	Message string `yaml:"message"`
+	Type     string    `yaml:"type"`
+	Message  string    `yaml:"message"`
+	Endpoint *Endpoint `yaml:"endpoint"`
 }
