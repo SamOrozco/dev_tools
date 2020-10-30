@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"dev_tools/files"
 	"fmt"
 	"github.com/gen2brain/beeep"
@@ -51,6 +52,11 @@ func main() {
 		interval = 100
 	}
 
+	// if no limit set or is less than zero set to 10_000
+	if config.Limit < 1 {
+		config.Limit = 10_000
+	}
+
 	// call endpoint for limit or condition met
 	println(fmt.Sprintf("testing endpoint with %d attemtps", config.Limit))
 	for i := 0; i < config.Limit; i++ {
@@ -76,7 +82,42 @@ func main() {
 }
 
 func executeSuccess(config *Config) {
-	err := beeep.Alert("Test Passed", config.SuccessMessage, "assets/information.png")
+
+	if config.Success == nil {
+		handleBasicSuccess()
+	}
+
+	successType := strings.ToLower(config.Success.Type)
+	// desktop notification
+	if successType == "desktop" {
+		handleDesktopSuccess(config.Success.Message)
+	} else if successType == "webhook" {
+		handleWebhookSuccess(config.Endpoint)
+	} else {
+		handleDesktopSuccess(config.Success.Message)
+	}
+}
+
+func handleWebhookSuccess(endpoint *Endpoint) {
+	if endpoint == nil {
+		panic("success configured for webhook but no endpoint supplied")
+	}
+	successRequest := buildRequest(endpoint)
+	_, err := httpClient.Do(&successRequest)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func handleDesktopSuccess(message string) {
+	err := beeep.Alert("Test Passed", message, "assets/information.png")
+	if err != nil {
+		panic(err)
+	}
+}
+
+func handleBasicSuccess() {
+	err := beeep.Alert("Test Passed", "Endpoint response passed condition", "assets/information.png")
 	if err != nil {
 		panic(err)
 	}
@@ -119,6 +160,7 @@ func buildRequest(endpoint *Endpoint) http.Request {
 		Method: endpoint.Method,
 		URL:    uri,
 		Header: http.Header{},
+		Body:   ioutil.NopCloser(bytes.NewReader([]byte(endpoint.Body))),
 	}
 }
 
