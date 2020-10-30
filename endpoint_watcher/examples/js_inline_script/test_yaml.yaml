@@ -2,8 +2,13 @@ endpoint:
   url: 'https://google.com'
   method: 'GET'
 js:
-  javascript: 'C:\Users\samue\projects\dev_tools\endpoint_watcher\examples\webhook\template_json.js'
+  type: 'script'
+  javascript: >
+    var code = statusCode;
+    var body = responseBody;
+    var def = code === 200;
 success:
+  message: 'this the desktop notification'
   type: 'webhook'
   endpoint:
     url: 'http://localhost:9005/test'

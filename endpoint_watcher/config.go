@@ -1,18 +1,12 @@
 package main
 
-import "fmt"
-
 type Config struct {
 	Endpoint       *Endpoint `yaml:"endpoint"`
-	JsFile         string    `yaml:"js_file"`
+	Js             *Js       `yaml:"js"`
 	Limit          int       `yaml:"limit"`
 	IntervalMillis int       `yaml:"interval_millis"`
 	Success        *Success  `yaml:"success"`
 	Auth           *Auth     `yaml:"auth"`
-}
-
-func (config Config) String() string {
-	return fmt.Sprintf("endpoint: %s, js_file: %s", config.Endpoint, config.JsFile)
 }
 
 type Endpoint struct {
@@ -31,4 +25,9 @@ type Success struct {
 	Type     string    `yaml:"type"`
 	Message  string    `yaml:"message"`
 	Endpoint *Endpoint `yaml:"endpoint"`
+}
+
+type Js struct {
+	Type string `yaml:"type"` // file or script default file
+	Js   string `yaml:"javascript"`
 }
