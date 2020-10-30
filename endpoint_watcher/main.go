@@ -244,14 +244,15 @@ func getJsContents(js *Js) string {
 		panic("js needs to be supplied")
 	}
 
+	var javascript string
 	if jsType == "file" {
-		return readJSStringFromFile(js.Js)
+		javascript = readJSStringFromFile(js.Js)
 	} else if jsType == "script" {
-		return js.Js
+		javascript = js.Js
 	} else {
-		// default file
-		return readJSStringFromFile(js.Js)
+		javascript = readJSStringFromFile(js.Js)
 	}
+	return os.ExpandEnv(javascript)
 }
 
 // PREPARE FUNCS
@@ -310,4 +311,8 @@ func prepareSuccess(success *Success) {
 		prepareConfig(success.Config)
 		prepareJs(success.Js)
 	}
+}
+
+func prepareText(test string) string {
+	return os.ExpandEnv(test)
 }
