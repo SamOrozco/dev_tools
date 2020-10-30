@@ -19,6 +19,7 @@ var vm = otto.New()
 var httpClient = http.DefaultClient
 
 func main() {
+	registerJavascriptFunctions()
 
 	if len(os.Args) < 2 {
 		panic("no yaml file passed")
@@ -75,7 +76,7 @@ func runConfig(config *Config) {
 	}
 
 	// call endpoint for limit or condition met
-	println(fmt.Sprintf("testing endpoint with %d attemtps", config.Limit))
+	println(fmt.Sprintf("testing [%s] endpoint with %d attempt", config.Endpoint.Url, config.Limit))
 	for i := 0; i < config.Limit; i++ {
 		resp, err := httpClient.Do(&request)
 		if err != nil {
@@ -340,4 +341,35 @@ func readConfigFromFile(fileLocation string) *Config {
 		panic(err)
 	}
 	return config
+}
+
+func registerJavascriptFunctions() {
+	// set env variable
+	err := vm.Set("setEnv", func(call otto.FunctionCall) otto.Value {
+		key := call.Argument(0).String()
+		value := call.Argument(1).String()
+		err := os.Setenv(key, value)
+		if err != nil {
+			println(err.Error())
+		}
+		return otto.Value{}
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	// getEnv variable
+	err = vm.Set("getEnv", func(call otto.FunctionCall) otto.Value {
+		key := call.Argument(0).String()
+		val := os.Getenv(key)
+		jsVal, err := vm.ToValue(val)
+		if err != nil {
+			return otto.Value{}
+		}
+		return jsVal
+	})
+
+	if err != nil {
+		panic(err)
+	}
 }
