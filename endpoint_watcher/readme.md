@@ -11,16 +11,25 @@ limit the number of attempts, interval_millis the number of millis to wait betwe
 to display in form of desktop notification to user. Currently, supporting basic auth through the auth property.
 ```yaml
 endpoint:
-  url: 'http://localhost:9005/test'
-  method: 'GET'
-js_file: 'C:\Users\samue\projects\dev_tools\endpoint_watcher\examples\template_json.js'
+  url: http://my.website.com
+  method: get
+  body: ""
+js:
+  type: ""
+  javascript: ""
 limit: 100
 interval_millis: 1000
-success_message: 'user equals sam'
+success:
+  type: webhook
+  message: ""
+  endpoint:
+    url: http://my.other.website.com
+    method: POST
+    body: '{"jobId":1000"}'
 auth:
-  type: 'basic'
-  username: 'samuelorozco'
-  password: 'password'
+  type: basic
+  username: samo
+  password: password
 ```
 
 

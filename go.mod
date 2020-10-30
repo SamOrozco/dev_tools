@@ -12,4 +12,5 @@ require (
 	github.com/robertkrimen/otto v0.0.0-20200922221731-ef014fd054ac
 	golang.org/x/crypto v0.0.0-20201016220609-9e8e0b390897 // indirect
 	gopkg.in/sourcemap.v1 v1.0.5 // indirect
+	gopkg.in/yaml.v2 v2.2.2
 )
