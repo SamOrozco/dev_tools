@@ -24,7 +24,9 @@ func main() {
 		panic("no yaml file passed")
 	}
 
-	data, err := files.ReadBytesFromFile(os.Args[1])
+	// expand env vars to their actual end vars
+	yamlFile := os.ExpandEnv(os.Args[1])
+	data, err := files.ReadBytesFromFile(yamlFile)
 	if err != nil {
 		panic(err)
 	}
@@ -35,6 +37,11 @@ func main() {
 	}
 
 	// run config
+	prepareConfig(config)
+}
+
+func prepareAndRunConfig(config *Config) {
+	prepareConfig(config)
 	runConfig(config)
 }
 
@@ -109,7 +116,7 @@ func executeSuccess(config *Config) {
 }
 
 func handleWatcherSuccess(config *Config) {
-	runConfig(config)
+	prepareAndRunConfig(config)
 }
 
 func handleWebhookSuccess(endpoint *Endpoint) {
@@ -230,5 +237,61 @@ func getJsContents(js *Js) string {
 	} else {
 		// default file
 		return readJSStringFromFile(js.Js)
+	}
+}
+
+// PREPARE FUNCS
+
+func prepareConfig(config *Config) {
+
+	// todo this way of preparing is very manual and prone to error
+	// todo for any variables that might be added
+	// prepare config strings
+	prepareJs(config.Js)
+	prepareEndpoint(config.Endpoint)
+	prepareSuccesses(config.Success)
+}
+
+func prepareJs(js *Js) {
+	if js != nil {
+		js.Js = os.ExpandEnv(js.Js)
+		js.Type = os.ExpandEnv(js.Type)
+	}
+
+}
+
+func prepareEndpoint(endpoint *Endpoint) {
+	if endpoint != nil {
+		endpoint.Method = os.ExpandEnv(endpoint.Method)
+		endpoint.Body = os.ExpandEnv(endpoint.Body)
+		endpoint.Url = os.ExpandEnv(endpoint.Url)
+		if endpoint.Auth != nil {
+			prepareAuth(endpoint.Auth)
+		}
+	}
+}
+
+func prepareAuth(auth *Auth) {
+	if auth != nil {
+		auth.Username = os.ExpandEnv(auth.Username)
+		auth.Password = os.ExpandEnv(auth.Password)
+		auth.Type = os.ExpandEnv(auth.Type)
+	}
+}
+
+func prepareSuccesses(successes []*Success) {
+	if successes != nil && len(successes) > 0 {
+		for i := range successes {
+			prepareSuccess(successes[i])
+		}
+	}
+}
+
+func prepareSuccess(success *Success) {
+	if success != nil {
+		success.Type = os.ExpandEnv(success.Type)
+		success.Message = os.ExpandEnv(success.Message)
+		prepareEndpoint(success.Endpoint)
+		prepareConfig(success.Config)
 	}
 }
