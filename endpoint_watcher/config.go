@@ -1,11 +1,11 @@
 package main
 
 type Config struct {
-	Endpoint       *Endpoint `yaml:"endpoint"`
-	Js             *Js       `yaml:"js"`
-	Limit          int       `yaml:"limit"`
-	IntervalMillis int       `yaml:"interval_millis"`
-	Success        *Success  `yaml:"success"`
+	Endpoint       *Endpoint  `yaml:"endpoint"`
+	Js             *Js        `yaml:"js"`
+	Limit          int        `yaml:"limit"`
+	IntervalMillis int        `yaml:"interval_millis"`
+	Success        []*Success `yaml:"success"`
 }
 
 type Endpoint struct {

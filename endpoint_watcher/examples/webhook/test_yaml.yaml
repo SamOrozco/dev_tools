@@ -4,8 +4,8 @@ endpoint:
 js:
   javascript: 'C:\Users\samue\projects\dev_tools\endpoint_watcher\examples\webhook\template_json.js'
 success:
-  type: 'webhook'
-  endpoint:
-    url: 'http://localhost:9005/test'
-    method: 'POST'
-    body: '{"name": "sam"}'
+  - type: 'webhook'
+    endpoint:
+      url: 'http://localhost:9005/test'
+      method: 'POST'
+      body: '{"name": "sam"}'

@@ -82,18 +82,21 @@ func main() {
 
 func executeSuccess(config *Config) {
 
-	if config.Success == nil {
+	if config.Success == nil || len(config.Success) < 1 {
 		handleBasicSuccess()
 	}
 
-	successType := strings.ToLower(config.Success.Type)
-	// desktop notification
-	if successType == "desktop" {
-		handleDesktopSuccess(config.Success.Message)
-	} else if successType == "webhook" {
-		handleWebhookSuccess(config.Success.Endpoint)
-	} else {
-		handleDesktopSuccess(config.Success.Message)
+	for i := range config.Success {
+		currentSuccess := config.Success[i]
+		successType := strings.ToLower(currentSuccess.Type)
+		// desktop notification
+		if successType == "desktop" {
+			handleDesktopSuccess(currentSuccess.Message)
+		} else if successType == "webhook" {
+			handleWebhookSuccess(currentSuccess.Endpoint)
+		} else {
+			handleDesktopSuccess(currentSuccess.Message)
+		}
 	}
 }
 

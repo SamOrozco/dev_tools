@@ -6,8 +6,8 @@ js:
 limit: 100
 interval_millis: 1000
 success:
-  message: 'user equals sam'
-  type: 'desktop'
+  - message: 'user equals sam'
+    type: 'desktop'
 auth:
   type: 'basic'
   username: 'samuelorozco'
