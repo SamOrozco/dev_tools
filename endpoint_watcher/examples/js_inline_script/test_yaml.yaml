@@ -14,7 +14,3 @@ success:
     url: 'http://localhost:9005/test'
     method: 'POST'
     body: '{"name": "sam"}'
-#auth:
-#  type: 'basic'
-#  username: 'samuelorozco'
-#  password: 'test_pass'

@@ -6,13 +6,13 @@ type Config struct {
 	Limit          int       `yaml:"limit"`
 	IntervalMillis int       `yaml:"interval_millis"`
 	Success        *Success  `yaml:"success"`
-	Auth           *Auth     `yaml:"auth"`
 }
 
 type Endpoint struct {
 	Url    string `yaml:"url"`
 	Method string `yaml:"method"`
 	Body   string `yaml:"body"`
+	Auth   *Auth  `yaml:"auth"`
 }
 
 type Auth struct {

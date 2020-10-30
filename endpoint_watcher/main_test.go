@@ -11,6 +11,10 @@ func TestThatThisIsWorking(testing *testing.T) {
 			Url:    "http://my.website.com",
 			Method: "get",
 			Body:   "",
+			Auth: &Auth{ // default basic auth
+				Username: "username",
+				Password: "my_pass",
+			},
 		},
 		Js: &Js{
 			Type: "",
@@ -25,12 +29,12 @@ func TestThatThisIsWorking(testing *testing.T) {
 				Url:    "http://my.other.website.com",
 				Method: "POST",
 				Body:   `{"jobId":1000"}`,
+				Auth: &Auth{
+					Type:     "basic",
+					Username: "samo",
+					Password: "passo",
+				},
 			},
-		},
-		Auth: &Auth{
-			Type:     "basic",
-			Username: "samo",
-			Password: "password",
 		},
 	}
 

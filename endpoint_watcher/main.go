@@ -44,7 +44,6 @@ func main() {
 
 	// call endpoint
 	request := buildRequest(config.Endpoint)
-	request = addAuthToRequest(request, config.Auth)
 
 	// set delay time
 	interval := config.IntervalMillis
@@ -156,12 +155,27 @@ func buildRequest(endpoint *Endpoint) http.Request {
 	if err != nil {
 		panic(err)
 	}
-	return http.Request{
+	request := http.Request{
 		Method: endpoint.Method,
 		URL:    uri,
 		Header: http.Header{},
 		Body:   ioutil.NopCloser(bytes.NewReader([]byte(endpoint.Body))),
 	}
+
+	// if has auth set it
+	if endpoint.Auth != nil {
+		if len(endpoint.Auth.Password) == 0 || len(endpoint.Auth.Username) == 0 {
+			panic("must supply a username and password with auth")
+		}
+
+		// default basic auth
+		if endpoint.Auth.Type == "" {
+			endpoint.Auth.Type = "basic"
+		}
+
+		return addAuthToRequest(request, endpoint.Auth)
+	}
+	return request
 }
 
 func readJSStringFromFile(jsFile string) string {
@@ -173,16 +187,7 @@ func readJSStringFromFile(jsFile string) string {
 }
 
 func validateConfig(config *Config) bool {
-
-	// has endpoint and js file
-	if !(config.Endpoint != nil && config.Js != nil) {
-		return false
-	}
-
-	// has auth and username and pass
-	if config.Auth != nil {
-		return len(config.Auth.Username) > 0 && len(config.Auth.Password) > 0
-	}
+	// tood implement
 	return true
 }
 
