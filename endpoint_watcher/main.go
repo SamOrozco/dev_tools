@@ -40,7 +40,7 @@ func main() {
 	}
 
 	// read js file
-	js := readJSStringFromFile(config.JsFile)
+	js := getJsContents(config.Js)
 
 	// call endpoint
 	request := buildRequest(config.Endpoint)
@@ -92,7 +92,7 @@ func executeSuccess(config *Config) {
 	if successType == "desktop" {
 		handleDesktopSuccess(config.Success.Message)
 	} else if successType == "webhook" {
-		handleWebhookSuccess(config.Endpoint)
+		handleWebhookSuccess(config.Success.Endpoint)
 	} else {
 		handleDesktopSuccess(config.Success.Message)
 	}
@@ -175,7 +175,7 @@ func readJSStringFromFile(jsFile string) string {
 func validateConfig(config *Config) bool {
 
 	// has endpoint and js file
-	if !(config.Endpoint != nil && len(config.JsFile) > 0) {
+	if !(config.Endpoint != nil && config.Js != nil) {
 		return false
 	}
 
@@ -194,4 +194,21 @@ func addAuthToRequest(request http.Request, auth *Auth) http.Request {
 		request.SetBasicAuth(auth.Username, auth.Password)
 	}
 	return request
+}
+
+func getJsContents(js *Js) string {
+	jsType := strings.ToLower(js.Type)
+
+	if len(js.Js) < 1 {
+		panic("js needs to be supplied")
+	}
+
+	if jsType == "file" {
+		return readJSStringFromFile(js.Js)
+	} else if jsType == "script" {
+		return js.Js
+	} else {
+		// default file
+		return readJSStringFromFile(js.Js)
+	}
 }

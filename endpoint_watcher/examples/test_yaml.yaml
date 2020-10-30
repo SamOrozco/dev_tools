@@ -1,7 +1,8 @@
 endpoint:
   url: 'http://localhost:9005/test'
   method: 'GET'
-js_file: 'C:\Users\samue\projects\dev_tools\endpoint_watcher\examples\template_json.js'
+js:
+  javascript: 'C:\Users\samue\projects\dev_tools\endpoint_watcher\examples\template_json.js'
 limit: 100
 interval_millis: 1000
 success:
