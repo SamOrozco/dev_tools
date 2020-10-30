@@ -36,6 +36,11 @@ func main() {
 		panic(err)
 	}
 
+	// read config from file if applicable if file is set on config
+	if len(config.ConfigFile) > 0 {
+		config = readConfigFromFileIfApplicable(config)
+	}
+
 	// run config
 	prepareAndRunConfig(config)
 }
@@ -118,6 +123,8 @@ func executeSuccess(config *Config) {
 }
 
 func handleWatcherSuccess(config *Config) {
+	// read config from file if applicable
+	config = readConfigFromFileIfApplicable(config)
 	prepareAndRunConfig(config)
 }
 
@@ -313,6 +320,24 @@ func prepareSuccess(success *Success) {
 	}
 }
 
-func prepareText(test string) string {
-	return os.ExpandEnv(test)
+// if file is set read from file else return current config
+func readConfigFromFileIfApplicable(config *Config) *Config {
+	if len(config.ConfigFile) > 0 {
+		return readConfigFromFile(config.ConfigFile)
+	}
+	return config
+}
+
+// read config from yaml to config struct
+func readConfigFromFile(fileLocation string) *Config {
+	data, err := files.ReadBytesFromFile(fileLocation)
+	if err != nil {
+		panic(err)
+	}
+
+	config := &Config{}
+	if err := yaml.Unmarshal(data, config); err != nil {
+		panic(err)
+	}
+	return config
 }
