@@ -1,0 +1,23 @@
+endpoint:
+  url: 'https://google.com'
+  method: 'GET'
+js:
+  type: 'script'
+  javascript: >
+    var code = statusCode;
+    var body = responseBody;
+    var def = code === 200;
+success:
+  - type: 'watcher'
+    config:
+      endpoint:
+        url: 'https://google.com'
+        method: 'GET'
+      js:
+        type: 'script'
+        javascript: >
+          var code = statusCode;
+          var body = responseBody;
+          var def = code === 200;
+      success:
+        - message: 'finished watcher'
