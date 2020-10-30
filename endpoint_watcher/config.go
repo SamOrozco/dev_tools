@@ -1,6 +1,7 @@
 package main
 
 type Config struct {
+	ConfigFile     string     `yaml:"config_file"` // optional, only if you want to load config from file
 	Endpoint       *Endpoint  `yaml:"endpoint"`
 	Js             *Js        `yaml:"js"`
 	Limit          int        `yaml:"limit"`
@@ -25,9 +26,11 @@ type Success struct {
 	Type     string    `yaml:"type"`
 	Message  string    `yaml:"message"`
 	Endpoint *Endpoint `yaml:"endpoint"`
+	Config   *Config   `yaml:"config"`
+	Js       *Js       `yaml:"js"`
 }
 
 type Js struct {
-	Type string `yaml:"type"` // file or script default file
+	Type string `yaml:"type"`
 	Js   string `yaml:"javascript"`
 }

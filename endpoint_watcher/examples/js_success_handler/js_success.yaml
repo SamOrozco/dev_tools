@@ -1,0 +1,13 @@
+endpoint:
+  url: 'https://google.com'
+  method: 'GET'
+js:
+  type: 'script'
+  javascript: >
+    var code = statusCode;
+    var body = responseBody;
+    var def = code === 200;
+success:
+  - type: 'js'
+    js:
+      javascript: '/Users/samuelorozco/dev_tools/endpoint_watcher/examples/js_success_handler/js_success.js'

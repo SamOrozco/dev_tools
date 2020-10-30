@@ -19,12 +19,15 @@ var vm = otto.New()
 var httpClient = http.DefaultClient
 
 func main() {
+	registerJavascriptFunctions()
 
 	if len(os.Args) < 2 {
 		panic("no yaml file passed")
 	}
 
-	data, err := files.ReadBytesFromFile(os.Args[1])
+	// expand env vars to their actual end vars
+	yamlFile := os.ExpandEnv(os.Args[1])
+	data, err := files.ReadBytesFromFile(yamlFile)
 	if err != nil {
 		panic(err)
 	}
@@ -34,6 +37,22 @@ func main() {
 		panic(err)
 	}
 
+	// read config from file if applicable if file is set on config
+	if len(config.ConfigFile) > 0 {
+		config = readConfigFromFileIfApplicable(config)
+	}
+
+	// run config
+	prepareAndRunConfig(config)
+}
+
+func prepareAndRunConfig(config *Config) {
+	prepareConfig(config)
+	runConfig(config)
+}
+
+// run the endpoint watcher config
+func runConfig(config *Config) {
 	// validate config
 	if !validateConfig(config) {
 		panic("keys `endpoint` and `js_file` must be filled out")
@@ -57,7 +76,7 @@ func main() {
 	}
 
 	// call endpoint for limit or condition met
-	println(fmt.Sprintf("testing endpoint with %d attemtps", config.Limit))
+	println(fmt.Sprintf("testing [%s] endpoint with %d attempt", config.Endpoint.Url, config.Limit))
 	for i := 0; i < config.Limit; i++ {
 		resp, err := httpClient.Do(&request)
 		if err != nil {
@@ -94,9 +113,31 @@ func executeSuccess(config *Config) {
 			handleDesktopSuccess(currentSuccess.Message)
 		} else if successType == "webhook" {
 			handleWebhookSuccess(currentSuccess.Endpoint)
+		} else if successType == "watcher" {
+			handleWatcherSuccess(currentSuccess.Config)
+		} else if successType == "js" {
+			handleJsSuccess(currentSuccess.Js)
 		} else {
 			handleDesktopSuccess(currentSuccess.Message)
 		}
+	}
+}
+
+func handleWatcherSuccess(config *Config) {
+	// read config from file if applicable
+	config = readConfigFromFileIfApplicable(config)
+	prepareAndRunConfig(config)
+}
+
+func handleJsSuccess(js *Js) {
+	javascript := getJsContents(js)
+	val, err := vm.Run(javascript)
+	if err != nil {
+		println(err.Error())
+		return
+	}
+	if val.IsDefined() {
+		println(val.String())
 	}
 }
 
@@ -211,12 +252,124 @@ func getJsContents(js *Js) string {
 		panic("js needs to be supplied")
 	}
 
+	var javascript string
 	if jsType == "file" {
-		return readJSStringFromFile(js.Js)
+		javascript = readJSStringFromFile(js.Js)
 	} else if jsType == "script" {
-		return js.Js
+		javascript = js.Js
 	} else {
-		// default file
-		return readJSStringFromFile(js.Js)
+		javascript = readJSStringFromFile(js.Js)
+	}
+	return os.ExpandEnv(javascript)
+}
+
+// PREPARE FUNCS
+
+func prepareConfig(config *Config) {
+	if config != nil {
+		// todo this way of preparing is very manual and prone to error
+		// todo for any variables that might be added
+		// prepare config strings
+		prepareJs(config.Js)
+		prepareEndpoint(config.Endpoint)
+		prepareSuccesses(config.Success)
+	}
+}
+
+func prepareJs(js *Js) {
+	if js != nil {
+		js.Js = os.ExpandEnv(js.Js)
+		js.Type = os.ExpandEnv(js.Type)
+	}
+
+}
+
+func prepareEndpoint(endpoint *Endpoint) {
+	if endpoint != nil {
+		endpoint.Method = os.ExpandEnv(endpoint.Method)
+		endpoint.Body = os.ExpandEnv(endpoint.Body)
+		endpoint.Url = os.ExpandEnv(endpoint.Url)
+		if endpoint.Auth != nil {
+			prepareAuth(endpoint.Auth)
+		}
+	}
+}
+
+func prepareAuth(auth *Auth) {
+	if auth != nil {
+		auth.Username = os.ExpandEnv(auth.Username)
+		auth.Password = os.ExpandEnv(auth.Password)
+		auth.Type = os.ExpandEnv(auth.Type)
+	}
+}
+
+func prepareSuccesses(successes []*Success) {
+	if successes != nil && len(successes) > 0 {
+		for i := range successes {
+			prepareSuccess(successes[i])
+		}
+	}
+}
+
+func prepareSuccess(success *Success) {
+	if success != nil {
+		success.Type = os.ExpandEnv(success.Type)
+		success.Message = os.ExpandEnv(success.Message)
+		prepareEndpoint(success.Endpoint)
+		prepareConfig(success.Config)
+		prepareJs(success.Js)
+	}
+}
+
+// if file is set read from file else return current config
+func readConfigFromFileIfApplicable(config *Config) *Config {
+	if len(config.ConfigFile) > 0 {
+		return readConfigFromFile(config.ConfigFile)
+	}
+	return config
+}
+
+// read config from yaml to config struct
+func readConfigFromFile(fileLocation string) *Config {
+	data, err := files.ReadBytesFromFile(fileLocation)
+	if err != nil {
+		panic(err)
+	}
+
+	config := &Config{}
+	if err := yaml.Unmarshal(data, config); err != nil {
+		panic(err)
+	}
+	return config
+}
+
+func registerJavascriptFunctions() {
+	// set env variable
+	err := vm.Set("setEnv", func(call otto.FunctionCall) otto.Value {
+		key := call.Argument(0).String()
+		value := call.Argument(1).String()
+		err := os.Setenv(key, value)
+		if err != nil {
+			println(err.Error())
+		}
+		return otto.Value{}
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	// getEnv variable
+	err = vm.Set("getEnv", func(call otto.FunctionCall) otto.Value {
+		key := call.Argument(0).String()
+		val := os.Getenv(key)
+		jsVal, err := vm.ToValue(val)
+		if err != nil {
+			return otto.Value{}
+		}
+		return jsVal
+	})
+
+	if err != nil {
+		panic(err)
 	}
 }
