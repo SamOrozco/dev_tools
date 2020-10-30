@@ -37,7 +37,7 @@ func main() {
 	}
 
 	// run config
-	prepareConfig(config)
+	prepareAndRunConfig(config)
 }
 
 func prepareAndRunConfig(config *Config) {
@@ -243,13 +243,14 @@ func getJsContents(js *Js) string {
 // PREPARE FUNCS
 
 func prepareConfig(config *Config) {
-
-	// todo this way of preparing is very manual and prone to error
-	// todo for any variables that might be added
-	// prepare config strings
-	prepareJs(config.Js)
-	prepareEndpoint(config.Endpoint)
-	prepareSuccesses(config.Success)
+	if config != nil {
+		// todo this way of preparing is very manual and prone to error
+		// todo for any variables that might be added
+		// prepare config strings
+		prepareJs(config.Js)
+		prepareEndpoint(config.Endpoint)
+		prepareSuccesses(config.Success)
+	}
 }
 
 func prepareJs(js *Js) {
