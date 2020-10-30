@@ -52,6 +52,11 @@ func main() {
 		interval = 100
 	}
 
+	// if no limit set or is less than zero set to 10_000
+	if config.Limit < 1 {
+		config.Limit = 10_000
+	}
+
 	// call endpoint for limit or condition met
 	println(fmt.Sprintf("testing endpoint with %d attemtps", config.Limit))
 	for i := 0; i < config.Limit; i++ {
@@ -85,19 +90,29 @@ func executeSuccess(config *Config) {
 	successType := strings.ToLower(config.Success.Type)
 	// desktop notification
 	if successType == "desktop" {
-		err := beeep.Alert("Test Passed", config.Success.Message, "assets/information.png")
-		if err != nil {
-			panic(err)
-		}
+		handleDesktopSuccess(config.Success.Message)
 	} else if successType == "webhook" {
-		if config.Success.Endpoint == nil {
-			panic("success configured for webhook but no endpoint supplied")
-		}
-		successRequest := buildRequest(config.Success.Endpoint)
-		_, err := httpClient.Do(&successRequest)
-		if err != nil {
-			panic(err)
-		}
+		handleWebhookSuccess(config.Endpoint)
+	} else {
+		handleDesktopSuccess(config.Success.Message)
+	}
+}
+
+func handleWebhookSuccess(endpoint *Endpoint) {
+	if endpoint == nil {
+		panic("success configured for webhook but no endpoint supplied")
+	}
+	successRequest := buildRequest(endpoint)
+	_, err := httpClient.Do(&successRequest)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func handleDesktopSuccess(message string) {
+	err := beeep.Alert("Test Passed", message, "assets/information.png")
+	if err != nil {
+		panic(err)
 	}
 }
 

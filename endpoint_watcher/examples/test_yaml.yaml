@@ -8,5 +8,6 @@ success:
   message: 'user equals sam'
   type: 'desktop'
 auth:
+  type: 'basic'
   username: 'samuelorozco'
   password: 'test_pass'
