@@ -109,6 +109,8 @@ func executeSuccess(config *Config) {
 			handleWebhookSuccess(currentSuccess.Endpoint)
 		} else if successType == "watcher" {
 			handleWatcherSuccess(currentSuccess.Config)
+		} else if successType == "js" {
+			handleJsSuccess(currentSuccess.Js)
 		} else {
 			handleDesktopSuccess(currentSuccess.Message)
 		}
@@ -117,6 +119,18 @@ func executeSuccess(config *Config) {
 
 func handleWatcherSuccess(config *Config) {
 	prepareAndRunConfig(config)
+}
+
+func handleJsSuccess(js *Js) {
+	javascript := getJsContents(js)
+	val, err := vm.Run(javascript)
+	if err != nil {
+		println(err.Error())
+		return
+	}
+	if val.IsDefined() {
+		println(val.String())
+	}
 }
 
 func handleWebhookSuccess(endpoint *Endpoint) {
@@ -294,5 +308,6 @@ func prepareSuccess(success *Success) {
 		success.Message = os.ExpandEnv(success.Message)
 		prepareEndpoint(success.Endpoint)
 		prepareConfig(success.Config)
+		prepareJs(success.Js)
 	}
 }
