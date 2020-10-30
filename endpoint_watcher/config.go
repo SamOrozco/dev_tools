@@ -30,6 +30,6 @@ type Success struct {
 }
 
 type Js struct {
-	Type string `yaml:"type"` // file or script default file
+	Type string `yaml:"type"`
 	Js   string `yaml:"javascript"`
 }
