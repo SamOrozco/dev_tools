@@ -8,13 +8,9 @@ js:
     var body = responseBody;
     var def = code === 200;
 success:
-  message: 'this the desktop notification'
-  type: 'webhook'
-  endpoint:
-    url: 'http://localhost:9005/test'
-    method: 'POST'
-    body: '{"name": "sam"}'
-#auth:
-#  type: 'basic'
-#  username: 'samuelorozco'
-#  password: 'test_pass'
+  - type: 'webhook'
+    endpoint:
+      url: 'http://localhost:9005/test'
+      method: 'POST'
+      body: '{"name": "sam"}'
+  - message: 'Google returned a 200'

@@ -44,7 +44,6 @@ func main() {
 
 	// call endpoint
 	request := buildRequest(config.Endpoint)
-	request = addAuthToRequest(request, config.Auth)
 
 	// set delay time
 	interval := config.IntervalMillis
@@ -83,18 +82,21 @@ func main() {
 
 func executeSuccess(config *Config) {
 
-	if config.Success == nil {
+	if config.Success == nil || len(config.Success) < 1 {
 		handleBasicSuccess()
 	}
 
-	successType := strings.ToLower(config.Success.Type)
-	// desktop notification
-	if successType == "desktop" {
-		handleDesktopSuccess(config.Success.Message)
-	} else if successType == "webhook" {
-		handleWebhookSuccess(config.Success.Endpoint)
-	} else {
-		handleDesktopSuccess(config.Success.Message)
+	for i := range config.Success {
+		currentSuccess := config.Success[i]
+		successType := strings.ToLower(currentSuccess.Type)
+		// desktop notification
+		if successType == "desktop" {
+			handleDesktopSuccess(currentSuccess.Message)
+		} else if successType == "webhook" {
+			handleWebhookSuccess(currentSuccess.Endpoint)
+		} else {
+			handleDesktopSuccess(currentSuccess.Message)
+		}
 	}
 }
 
@@ -156,12 +158,27 @@ func buildRequest(endpoint *Endpoint) http.Request {
 	if err != nil {
 		panic(err)
 	}
-	return http.Request{
+	request := http.Request{
 		Method: endpoint.Method,
 		URL:    uri,
 		Header: http.Header{},
 		Body:   ioutil.NopCloser(bytes.NewReader([]byte(endpoint.Body))),
 	}
+
+	// if has auth set it
+	if endpoint.Auth != nil {
+		if len(endpoint.Auth.Password) == 0 || len(endpoint.Auth.Username) == 0 {
+			panic("must supply a username and password with auth")
+		}
+
+		// default basic auth
+		if endpoint.Auth.Type == "" {
+			endpoint.Auth.Type = "basic"
+		}
+
+		return addAuthToRequest(request, endpoint.Auth)
+	}
+	return request
 }
 
 func readJSStringFromFile(jsFile string) string {
@@ -173,16 +190,7 @@ func readJSStringFromFile(jsFile string) string {
 }
 
 func validateConfig(config *Config) bool {
-
-	// has endpoint and js file
-	if !(config.Endpoint != nil && config.Js != nil) {
-		return false
-	}
-
-	// has auth and username and pass
-	if config.Auth != nil {
-		return len(config.Auth.Username) > 0 && len(config.Auth.Password) > 0
-	}
+	// tood implement
 	return true
 }
 

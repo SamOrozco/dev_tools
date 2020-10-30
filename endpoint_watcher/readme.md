@@ -14,6 +14,9 @@ endpoint:
   url: http://my.website.com
   method: get
   body: ""
+  auth:
+    username: username
+    password: my_pass
 js:
   type: ""
   javascript: ""
@@ -26,10 +29,10 @@ success:
     url: http://my.other.website.com
     method: POST
     body: '{"jobId":1000"}'
-auth:
-  type: basic
-  username: samo
-  password: password
+    auth:
+      type: basic
+      username: samo
+      password: passo
 ```
 
 
