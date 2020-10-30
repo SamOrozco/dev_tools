@@ -34,6 +34,12 @@ func main() {
 		panic(err)
 	}
 
+	// run config
+	runConfig(config)
+}
+
+// run the endpoint watcher config
+func runConfig(config *Config) {
 	// validate config
 	if !validateConfig(config) {
 		panic("keys `endpoint` and `js_file` must be filled out")
@@ -94,10 +100,16 @@ func executeSuccess(config *Config) {
 			handleDesktopSuccess(currentSuccess.Message)
 		} else if successType == "webhook" {
 			handleWebhookSuccess(currentSuccess.Endpoint)
+		} else if successType == "watcher" {
+			handleWatcherSuccess(currentSuccess.Config)
 		} else {
 			handleDesktopSuccess(currentSuccess.Message)
 		}
 	}
+}
+
+func handleWatcherSuccess(config *Config) {
+	runConfig(config)
 }
 
 func handleWebhookSuccess(endpoint *Endpoint) {

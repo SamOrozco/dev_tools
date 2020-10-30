@@ -25,6 +25,7 @@ type Success struct {
 	Type     string    `yaml:"type"`
 	Message  string    `yaml:"message"`
 	Endpoint *Endpoint `yaml:"endpoint"`
+	Config   *Config   `yaml:"config"`
 }
 
 type Js struct {
