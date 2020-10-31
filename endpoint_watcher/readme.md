@@ -177,3 +177,10 @@ success:
 
 There are also two functions you can use in your javascript to pass variables from watcher to watcher or step to step. 
 They are a `setEnv('key', 'value')` or `getEnv('key')`
+
+
+
+# Usage 
+```
+ew C:\path\to\yaml.yaml
+```
