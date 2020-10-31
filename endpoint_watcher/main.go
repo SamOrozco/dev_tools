@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	logger2 "dev_tools/endpoint_watcher/logger"
 	"dev_tools/files"
 	"fmt"
 	"github.com/gen2brain/beeep"
@@ -12,6 +13,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -25,8 +27,25 @@ func main() {
 		panic("no yaml file passed")
 	}
 
+	yamlFiles := os.Args[1:]
+	var wg sync.WaitGroup
+	for i := range yamlFiles {
+		wg.Add(1)
+		var idx = i
+		go func() {
+			defer wg.Done()
+			handleYamlFileLocation(yamlFiles[idx])
+		}()
+	}
+
+	// wait for all to be done
+	wg.Wait()
+}
+
+// handle yaml file string
+func handleYamlFileLocation(location string) {
 	// expand env vars to their actual end vars
-	yamlFile := os.ExpandEnv(os.Args[1])
+	yamlFile := os.ExpandEnv(location)
 	data, err := files.ReadBytesFromFile(yamlFile)
 	if err != nil {
 		panic(err)
@@ -53,6 +72,8 @@ func prepareAndRunConfig(config *Config) {
 
 // run the endpoint watcher config
 func runConfig(config *Config) {
+	log := logger2.NewStdOutLogger(config.Name)
+
 	// validate config
 	if !validateConfig(config) {
 		panic("keys `endpoint` and `js_file` must be filled out")
@@ -76,7 +97,7 @@ func runConfig(config *Config) {
 	}
 
 	// call endpoint for limit or condition met
-	println(fmt.Sprintf("testing [%s] endpoint with %d attempt", config.Endpoint.Url, config.Limit))
+	log.Debug(fmt.Sprintf("testing [%s] endpoint with %d attempt", config.Endpoint.Url, config.Limit))
 	for i := 0; i < config.Limit; i++ {
 		resp, err := httpClient.Do(&request)
 		if err != nil {
@@ -84,13 +105,18 @@ func runConfig(config *Config) {
 		}
 		if handleResponse(resp, js) {
 			executeSuccess(config)
-			println("success")
+
+			if len(config.Name) > 0 {
+				log.Debug(fmt.Sprintf("%s has finished successfully", config.Name))
+			} else {
+				log.Debug("finished successfully")
+			}
 			return
 		}
 
 		// every 10 print which req we're on
 		if i%10 == 0 {
-			println(fmt.Sprintf("on request %d", i))
+			log.Debug(fmt.Sprintf("on request %d", i))
 		}
 
 		// wait for defined period of time

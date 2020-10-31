@@ -1,3 +1,4 @@
+name: 'test inline js'
 endpoint:
   url: 'https://google.com'
   method: 'GET'
