@@ -7,12 +7,12 @@ js:
     var def = statusCode === 200;
 success:
   - type: 'js'
-    javascript: >
-      setEnv('responseBody' responseBody)
-  - type: 'watcher'
-    config:
-      config_file: 'C:\my\yaml\file.yaml'
-  - type: 'webhook'
-    endpoint:
-      url: 'http://google.com'
-      method: 'GET'
+    js:
+      type: 'script'
+      javascript: >
+        setEnv('responseBody', responseBody)
+  - type: 'js'
+    js:
+      type: 'script'
+      javascript: >
+        console.log(getEnv('responseBody'))
