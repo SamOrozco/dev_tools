@@ -60,6 +60,7 @@ js:
 **Inline Script** you must specify `type: 'script'` for this to work
 ```yaml
 js: 
+  type: 'script'
   javascript: 'var def = statusCode === 200'
 ```
 
