@@ -1,3 +1,4 @@
+name: 'top-level'
 endpoint:
   url: 'https://google.com'
   method: 'GET'
@@ -10,6 +11,7 @@ js:
 success:
   - type: 'watcher'
     config:
+      name: 'second-level'
       endpoint:
         url: 'https://google.com'
         method: 'GET'
