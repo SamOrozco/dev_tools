@@ -13,6 +13,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -26,8 +27,25 @@ func main() {
 		panic("no yaml file passed")
 	}
 
+	yamlFiles := os.Args[1:]
+	var wg sync.WaitGroup
+	for i := range yamlFiles {
+		wg.Add(1)
+		var idx = i
+		go func() {
+			defer wg.Done()
+			handleYamlFileLocation(yamlFiles[idx])
+		}()
+	}
+
+	// wait for all to be done
+	wg.Wait()
+}
+
+// handle yaml file string
+func handleYamlFileLocation(location string) {
 	// expand env vars to their actual end vars
-	yamlFile := os.ExpandEnv(os.Args[1])
+	yamlFile := os.ExpandEnv(location)
 	data, err := files.ReadBytesFromFile(yamlFile)
 	if err != nil {
 		panic(err)

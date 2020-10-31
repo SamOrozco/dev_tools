@@ -10,4 +10,4 @@ js:
 success:
   - type: 'js'
     js:
-      javascript: '/Users/samuelorozco/dev_tools/endpoint_watcher/examples/js_success_handler/js_success.js'
+      javascript: 'C:\Users\samue\projects\dev_tools\endpoint_watcher\examples\js_success_handler\js_success.js'
