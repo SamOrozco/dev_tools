@@ -4,13 +4,15 @@ endpoint:
 js:
   type: 'script'
   javascript: >
-    var code = statusCode;
-    var body = responseBody;
-    var def = code === 200;
+    var def = statusCode === 200;
 success:
+  - type: 'js'
+    javascript: >
+      setEnv('responseBody' responseBody)
+  - type: 'watcher'
+    config:
+      config_file: 'C:\my\yaml\file.yaml'
   - type: 'webhook'
     endpoint:
-      url: 'http://localhost:9005/test'
-      method: 'POST'
-      body: '{"name": "sam"}'
-  - message: 'Google returned a 200'
+      url: 'http://google.com'
+      method: 'GET'

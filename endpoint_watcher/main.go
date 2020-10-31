@@ -176,8 +176,15 @@ func handleResponse(resp *http.Response, js string) bool {
 	if err != nil {
 		println(err.Error())
 	}
-	vm.Set("statusCode", resp.StatusCode)
-	vm.Set("responseBody", string(respBytes))
+
+	if err := vm.Set("statusCode", resp.StatusCode); err != nil {
+		println(err.Error())
+	}
+
+	if err := vm.Set("responseBody", string(respBytes)); err != nil {
+		println(err.Error())
+	}
+
 	if _, err := vm.Run(js); err != nil {
 		panic(err)
 	}
