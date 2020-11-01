@@ -19,6 +19,7 @@ import (
 
 var vm = otto.New()
 var httpClient = http.DefaultClient
+var globalLogger = logger2.NewStdOutLogger("global")
 
 func main() {
 	registerJavascriptFunctions()
@@ -134,6 +135,23 @@ func executeSuccess(config *Config) {
 	for i := range config.Success {
 		currentSuccess := config.Success[i]
 		successType := strings.ToLower(currentSuccess.Type)
+
+		// if there is a condition on success
+		if currentSuccess.If != nil {
+			switch currentSuccess.If.Type {
+			case "js":
+				if !handleJsIf(currentSuccess.If) {
+					continue
+				}
+				break
+			default: // if no type specified defaults to js
+				if !handleJsIf(currentSuccess.If) {
+					continue
+				}
+				break
+			}
+		}
+
 		// desktop notification
 		if successType == "desktop" {
 			handleDesktopSuccess(currentSuccess.Message)
@@ -147,6 +165,14 @@ func executeSuccess(config *Config) {
 			handleDesktopSuccess(currentSuccess.Message)
 		}
 	}
+}
+
+func handleJsIf(jsIf *If) bool {
+	if jsIf.Js == nil {
+		panic("js if must have js field defined")
+	}
+	js := getJsContents(jsIf.Js)
+	return executeJsAndGetDefValue(js)
 }
 
 func handleWatcherSuccess(config *Config) {
@@ -210,18 +236,25 @@ func handleResponse(resp *http.Response, js string) bool {
 	if err := vm.Set("responseBody", string(respBytes)); err != nil {
 		println(err.Error())
 	}
+	return executeJsAndGetDefValue(js)
+}
 
+func executeJsAndGetDefValue(js string) bool {
 	if _, err := vm.Run(js); err != nil {
 		panic(err)
 	}
 
 	resultVal, err := vm.Get("def")
 	if err != nil {
-		panic(err)
+		globalLogger.Error("unable to get def value for executeJsAndGetDefValue")
+		globalLogger.Error(js)
+		return false
 	}
 
 	if val, err := resultVal.ToBoolean(); err != nil {
-		panic(err)
+		globalLogger.Error("unable to convert def value to boolean")
+		globalLogger.Error(js)
+		return false
 	} else {
 		return val
 	}
