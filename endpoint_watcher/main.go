@@ -17,7 +17,7 @@ func main() {
 	registerJavascriptFunctions()
 
 	// setup dependencies
-	preparer := NewSuppliedPreparer(func(val string) string {
+	valuePreparer := NewSuppliedPreparer(func(val string) string {
 		return os.ExpandEnv(val)
 	})
 	fileLoader := NewFileLoader()
@@ -26,9 +26,9 @@ func main() {
 	configFileLoader := NewConfigFileLoader(fileLoader, configConverter)
 	configValidator := NewDefaultConfigValidator()
 	endpointRequestBuilder := NewDefaultRequestBuilder()
-	httpClient := http.DefaultClient
 	ifHandler := NewJsIfHandler(vm, jsLoader)
-	logger := logger2.NewStdOutLogger("first")
+	httpClient := http.DefaultClient
+	logger := logger2.NewStdOutLogger("root logger")
 
 	conditionResponseHandler := NewDefaultConditionResponseHandler(NewFuncConditionResponseHandler(func(resp *http.Response, cond *Condition) bool {
 		if err := vm.Set("statusCode", resp.StatusCode); err != nil {
@@ -43,6 +43,7 @@ func main() {
 		}
 		return ifHandler.If(cond)
 	}))
+
 	// setup success handler
 	successHandler := NewDefaultSuccessHandler(
 		endpointRequestBuilder,
@@ -54,7 +55,7 @@ func main() {
 
 	// setup config runner
 	configRunner := NewLocalConfigRunner(
-		preparer,
+		valuePreparer,
 		configFileLoader,
 		configValidator,
 		endpointRequestBuilder,

@@ -2,7 +2,7 @@ name: 'top-level'
 endpoint:
   url: 'https://google.com'
   method: 'GET'
-js:
+cond:
   type: 'script'
   javascript: >
     var code = statusCode;
@@ -10,12 +10,12 @@ js:
     var def = code === 200;
 success:
   - type: 'watcher'
-    config:
+    watcher:
       name: 'second-level'
       endpoint:
         url: 'https://google.com'
         method: 'GET'
-      js:
+      cond:
         type: 'script'
         javascript: >
           var code = statusCode;

@@ -4,10 +4,11 @@ endpoint:
 js:
   type: 'script'
   javascript: >
+    console.log('during the request')
     var def = statusCode === 200;
 limit: 100
 interval_millis: 1000
 success:
   - type: 'watcher'
-    config:
-      config_file: '/Users/samuelorozco/dev_tools/endpoint_watcher/examples/test_linking_yaml/test_yaml.yaml'
+    watcher:
+      config_file: 'C:\Users\samue\projects\dev_tools\endpoint_watcher\examples\test_linking_yaml\test_yaml.yaml'

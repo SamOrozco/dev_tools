@@ -1,6 +1,9 @@
 package logger
 
-import "github.com/fatih/color"
+import (
+	"fmt"
+	"github.com/fatih/color"
+)
 
 type Logger interface {
 	Error(message string)
@@ -19,13 +22,20 @@ func NewStdOutLogger(pre string) Logger {
 }
 
 func (s StdOutLogger) Error(message string) {
-	color.Red("%s [Error] - %s", s.prefix, message)
+	color.Red("%s [Error] - %s", getPrefix(s.prefix), message)
 }
 
 func (s StdOutLogger) Warn(message string) {
-	color.HiRed("%s [Warn] - %s", s.prefix, message)
+	color.HiRed("%s [Warn] - %s", getPrefix(s.prefix), message)
 }
 
 func (s StdOutLogger) Debug(message string) {
-	color.Cyan("%s [Debug] - %s", s.prefix, message)
+	color.Cyan("%s [Debug] - %s", getPrefix(s.prefix), message)
+}
+
+func getPrefix(pre string) string {
+	if len(pre) < 1 {
+		return ""
+	}
+	return fmt.Sprintf("[%s]", pre)
 }
