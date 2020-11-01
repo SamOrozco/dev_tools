@@ -265,10 +265,11 @@ func buildRequest(endpoint *Endpoint) http.Request {
 	if err != nil {
 		panic(err)
 	}
+
 	request := http.Request{
-		Method: endpoint.Method,
+		Method: strings.ToUpper(endpoint.Method),
 		URL:    uri,
-		Header: http.Header{},
+		Header: endpoint.Headers,
 		Body:   ioutil.NopCloser(bytes.NewReader([]byte(endpoint.Body))),
 	}
 
@@ -357,6 +358,23 @@ func prepareEndpoint(endpoint *Endpoint) {
 		endpoint.Url = os.ExpandEnv(endpoint.Url)
 		if endpoint.Auth != nil {
 			prepareAuth(endpoint.Auth)
+		}
+
+		if endpoint.Headers != nil {
+			prepareHeaders(endpoint.Headers)
+		}
+	}
+}
+
+func prepareHeaders(headers map[string][]string) {
+	if headers != nil {
+		for key, element := range headers {
+			// prepare headers
+			result := make([]string, len(element))
+			for i := range element {
+				result[i] = os.ExpandEnv(element[i])
+			}
+			headers[os.ExpandEnv(key)] = result
 		}
 	}
 }

@@ -1,0 +1,17 @@
+name: 'header example'
+endpoint:
+  url: 'https://google.com'
+  method: 'get'
+  headers:
+    Authorization:
+      - 'Bearer sometoken'
+js:
+  type: 'script'
+  javascript: >
+    var def = statusCode === 200;
+success:
+  - message: 'Success sending headers'
+    if:
+      js:
+        type: 'script'
+        javascript: 'var def = statusCode === 400;'
