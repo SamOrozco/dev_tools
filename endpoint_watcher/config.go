@@ -24,6 +24,7 @@ type Auth struct {
 }
 
 type Success struct {
+	If       *If       `yaml:"if"`
 	Type     string    `yaml:"type"`
 	Message  string    `yaml:"message"`
 	Endpoint *Endpoint `yaml:"endpoint"`
@@ -34,4 +35,9 @@ type Success struct {
 type Js struct {
 	Type string `yaml:"type"`
 	Js   string `yaml:"javascript"`
+}
+
+type If struct {
+	Type string `yaml:"json"`
+	Js   *Js    `yaml:"js"`
 }

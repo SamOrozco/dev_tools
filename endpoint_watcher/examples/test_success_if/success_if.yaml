@@ -1,0 +1,23 @@
+name: 'success if'
+endpoint:
+  url: 'https://google.com'
+  method: 'GET'
+js:
+  type: 'script'
+  javascript: >
+    setEnv('name', 'sam');
+    console.log(statusCode);
+    var def = statusCode === 200;
+success:
+  - type: 'desktop'
+    message: 'Show this notification is name samo'
+    if:
+      js:
+        type: 'script'
+        javascript: 'var def = "${name}" === "samo"'
+  - type: 'desktop'
+    message: 'Show this notification is name sam'
+    if:
+      js:
+        type: 'script'
+        javascript: 'var def = "${name}" === "sam"'
