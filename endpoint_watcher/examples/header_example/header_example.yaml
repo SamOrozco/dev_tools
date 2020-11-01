@@ -5,13 +5,13 @@ endpoint:
   headers:
     Authorization:
       - 'Bearer sometoken'
-js:
+cond:
   type: 'script'
   javascript: >
     var def = statusCode === 200;
 success:
   - message: 'Success sending headers'
     if:
-      js:
+      cond:
         type: 'script'
         javascript: 'var def = statusCode === 400;'

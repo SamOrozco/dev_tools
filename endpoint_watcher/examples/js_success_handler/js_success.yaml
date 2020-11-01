@@ -1,7 +1,7 @@
 endpoint:
   url: 'https://google.com'
   method: 'GET'
-js:
+cond:
   type: 'script'
   javascript: >
     var code = statusCode;

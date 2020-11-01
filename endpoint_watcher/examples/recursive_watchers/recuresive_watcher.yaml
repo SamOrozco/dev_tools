@@ -2,7 +2,7 @@ name: 'recursive watcher'
 endpoint:
   url: 'http://google.com'
   method: 'GET'
-js:
+cond:
   type: 'script'
   javascript: >
     var def = statusCode === 200;
@@ -12,5 +12,5 @@ success:
       type: 'script'
       javascript: 'console.log("Recursive watcher first success");'
   - type: 'watcher'
-    config:
+    watcher:
       config_file: 'C:\Users\samue\projects\dev_tools\endpoint_watcher\examples\recursive_watchers\recuresive_watcher.yaml'

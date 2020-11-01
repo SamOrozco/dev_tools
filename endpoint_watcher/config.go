@@ -4,7 +4,7 @@ type Config struct {
 	Name           string     `yaml:"name"`        // optional
 	ConfigFile     string     `yaml:"config_file"` // optional, only if you want to load config from file
 	Endpoint       *Endpoint  `yaml:"endpoint"`
-	Js             *Js        `yaml:"js"`
+	Cond           *Condition `yaml:"cond"`
 	Limit          int        `yaml:"limit"`
 	IntervalMillis int        `yaml:"interval_millis"`
 	Success        []*Success `yaml:"success"`
@@ -25,20 +25,15 @@ type Auth struct {
 }
 
 type Success struct {
-	If       *If       `yaml:"if"`
-	Type     string    `yaml:"type"`
-	Message  string    `yaml:"message"`
-	Endpoint *Endpoint `yaml:"endpoint"`
-	Config   *Config   `yaml:"config"`
-	Js       *Js       `yaml:"js"`
+	If       *Condition `yaml:"if"`
+	Type     string     `yaml:"type"`
+	Message  string     `yaml:"message"`
+	Endpoint *Endpoint  `yaml:"endpoint"`
+	Watcher  *Config    `yaml:"watcher"`
+	Cond     *Condition `yaml:"js"`
 }
 
-type Js struct {
+type Condition struct {
 	Type string `yaml:"type"`
 	Js   string `yaml:"javascript"`
-}
-
-type If struct {
-	Type string `yaml:"json"`
-	Js   *Js    `yaml:"js"`
 }
