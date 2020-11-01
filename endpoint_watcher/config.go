@@ -11,10 +11,11 @@ type Config struct {
 }
 
 type Endpoint struct {
-	Url    string `yaml:"url"`
-	Method string `yaml:"method"`
-	Body   string `yaml:"body"`
-	Auth   *Auth  `yaml:"auth"`
+	Url     string              `yaml:"url"`
+	Method  string              `yaml:"method"`
+	Body    string              `yaml:"body"`
+	Headers map[string][]string `yaml:"headers"`
+	Auth    *Auth               `yaml:"auth"`
 }
 
 type Auth struct {
