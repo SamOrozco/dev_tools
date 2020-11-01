@@ -64,6 +64,8 @@ func (l localConfigRunner) RunConfig(config *Config) error {
 	configName := ""
 	if len(config.Name) > 0 {
 		configName = config.Name
+	} else {
+		configName = GetRandomName(0)
 	}
 	runLogger := logger2.NewStdOutLogger(configName)
 

@@ -2,11 +2,12 @@ package main
 
 import (
 	logger2 "dev_tools/endpoint_watcher/logger"
+	"fmt"
 	"github.com/robertkrimen/otto"
 	"io/ioutil"
 	"net/http"
 	"os"
-	"time"
+	"sync"
 )
 
 var vm = otto.New()
@@ -28,7 +29,6 @@ func main() {
 	endpointRequestBuilder := NewDefaultRequestBuilder()
 	ifHandler := NewJsIfHandler(vm, jsLoader)
 	httpClient := http.DefaultClient
-	logger := logger2.NewStdOutLogger("root logger")
 
 	conditionResponseHandler := NewDefaultConditionResponseHandler(NewFuncConditionResponseHandler(func(resp *http.Response, cond *Condition) bool {
 		if err := vm.Set("statusCode", resp.StatusCode); err != nil {
@@ -53,26 +53,37 @@ func main() {
 		ifHandler,
 	)
 
-	// setup config runner
-	configRunner := NewLocalConfigRunner(
-		valuePreparer,
-		configFileLoader,
-		configValidator,
-		endpointRequestBuilder,
-		httpClient,
-		conditionResponseHandler,
-		successHandler,
-		logger,
-	)
+	// run a config for each file given
+	asyncWaitGroup := sync.WaitGroup{}
+	fileLocations := os.Args[1:]
+	for i := range fileLocations {
+		currentFile := fileLocations[i]
+		curLogger := logger2.NewStdOutLogger(fmt.Sprintf("root logger [%d]", i))
+		// run every file concurrently
 
-	// list for any child builds async
-
-	if err := configRunner.RunConfigFromFile(os.Args[1]); err != nil {
-		panic(err)
+		// tell the wait group to wait
+		asyncWaitGroup.Add(1)
+		go func() {
+			// create new config runner
+			configRunner := NewLocalConfigRunner(
+				valuePreparer,
+				configFileLoader,
+				configValidator,
+				endpointRequestBuilder,
+				httpClient,
+				conditionResponseHandler,
+				successHandler,
+				curLogger,
+			)
+			// list for any child builds async
+			if err := configRunner.RunConfigFromFile(currentFile); err != nil {
+				panic(err)
+			}
+			asyncWaitGroup.Done()
+		}()
 	}
+	asyncWaitGroup.Wait()
 
-	// wait for all child jobs to finish
-	<-time.After(time.Millisecond * 100)
 }
 
 func registerJavascriptFunctions() {
