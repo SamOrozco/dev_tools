@@ -1,3 +1,5 @@
+This tool has moved to it's own repo and will no longer be maintained here.
+
 # Endpoint Watcher
 
 Endpoint watcher is a cli tool to monitor anything within reach of an http request. Configure this tool using yaml to alert you when
