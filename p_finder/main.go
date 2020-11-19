@@ -2,12 +2,17 @@ package main
 
 import (
 	"dev_tools/files"
-	"fmt"
+	"github.com/labstack/gommon/color"
 	"os"
 	"path/filepath"
 	"regexp"
 	"sync"
 )
+
+type RegexMatch struct {
+	FilePath   string
+	MatchValue string
+}
 
 func main() {
 	if len(os.Args) < 3 {
@@ -23,12 +28,15 @@ func main() {
 	}
 
 	fileSearchWaitGroup := &sync.WaitGroup{}
-	fileChan := make(chan string, 0)
+	fileChan := make(chan *RegexMatch, 0)
 
 	// start listening in file chan
 	go func() {
 		for file := range fileChan {
-			println(fmt.Sprintf("File Match: [%s]", file))
+			path := file.FilePath
+			matchValue := file.MatchValue
+			println(color.Blue(path))
+			println(color.Yellow(matchValue))
 
 			// this will dec wait group so we can be sure to print
 			// file not containing value will close wait group
@@ -56,14 +64,17 @@ func main() {
 }
 
 // if file contains regex pattern write file path to chan
-func searchFile(filePath string, pattern *regexp.Regexp, fileChan chan string, wg *sync.WaitGroup) {
-	dataString, err := files.ReadStringFromFile(filePath)
+func searchFile(filePath string, pattern *regexp.Regexp, fileChan chan *RegexMatch, wg *sync.WaitGroup) {
+	dataBytes, err := files.ReadBytesFromFile(filePath)
 	if err != nil {
 		wg.Done()
 		return
 	}
-	if pattern.MatchString(dataString) {
-		fileChan <- filePath
+	if pattern.Match(dataBytes) {
+		fileChan <- &RegexMatch{
+			FilePath:   filePath,
+			MatchValue: string(pattern.Find(dataBytes)),
+		}
 	} else {
 
 		// only on error or not containing value will we close wait group here
