@@ -97,7 +97,7 @@ func getPrintValue(dataBytes []byte, pattern *regexp.Regexp) (string, string) {
 	endPadding := len(stringVal) - endIdx
 
 	valueString := stringVal[startIdx:endIdx]
-	paddingValues := []int{2000, 1000, 500, 250}
+	paddingValues := []int{1000, 500, 250}
 	for i := range paddingValues {
 		padding := paddingValues[i]
 		if frontPadding > padding && endPadding > padding {
