@@ -73,7 +73,7 @@ func searchFile(filePath string, pattern *regexp.Regexp, fileChan chan *RegexMat
 	if pattern.Match(dataBytes) {
 		fileChan <- &RegexMatch{
 			FilePath:   filePath,
-			MatchValue: string(pattern.Find(dataBytes)),
+			MatchValue: getPrintValue(dataBytes, pattern),
 		}
 	} else {
 
@@ -81,4 +81,8 @@ func searchFile(filePath string, pattern *regexp.Regexp, fileChan chan *RegexMat
 		// otherwise printing go routine will close wait group after printing.
 		wg.Done()
 	}
+}
+
+func getPrintValue(dataBytes []byte, pattern *regexp.Regexp) string {
+	return string(pattern.Find(dataBytes))
 }
