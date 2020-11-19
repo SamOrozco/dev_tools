@@ -2,16 +2,18 @@ package main
 
 import (
 	"dev_tools/files"
-	"github.com/labstack/gommon/color"
+	"github.com/fatih/color"
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"sync"
 )
 
 type RegexMatch struct {
-	FilePath   string
-	MatchValue string
+	FilePath              string
+	MatchValue            string
+	MatchValueWithPadding string
 }
 
 func main() {
@@ -35,8 +37,9 @@ func main() {
 		for file := range fileChan {
 			path := file.FilePath
 			matchValue := file.MatchValue
-			println(color.Blue(path))
-			println(color.Yellow(matchValue))
+			matchValueWithPadding := file.MatchValueWithPadding
+			color.Blue(path)
+			println(strings.ReplaceAll(matchValueWithPadding, matchValue, color.HiGreenString(matchValue)))
 
 			// this will dec wait group so we can be sure to print
 			// file not containing value will close wait group
@@ -71,9 +74,11 @@ func searchFile(filePath string, pattern *regexp.Regexp, fileChan chan *RegexMat
 		return
 	}
 	if pattern.Match(dataBytes) {
+		matchVal, matchValueWithPadding := getPrintValue(dataBytes, pattern)
 		fileChan <- &RegexMatch{
-			FilePath:   filePath,
-			MatchValue: getPrintValue(dataBytes, pattern),
+			FilePath:              filePath,
+			MatchValue:            matchVal,
+			MatchValueWithPadding: matchValueWithPadding,
 		}
 	} else {
 
@@ -83,6 +88,22 @@ func searchFile(filePath string, pattern *regexp.Regexp, fileChan chan *RegexMat
 	}
 }
 
-func getPrintValue(dataBytes []byte, pattern *regexp.Regexp) string {
-	return string(pattern.Find(dataBytes))
+func getPrintValue(dataBytes []byte, pattern *regexp.Regexp) (string, string) {
+	stringVal := string(dataBytes)
+	indexes := pattern.FindStringIndex(stringVal)
+	startIdx := indexes[0]
+	endIdx := indexes[1]
+	frontPadding := startIdx
+	endPadding := len(stringVal) - endIdx
+
+	valueString := stringVal[startIdx:endIdx]
+	paddingValues := []int{2000, 1000, 500, 250}
+	for i := range paddingValues {
+		padding := paddingValues[i]
+		if frontPadding > padding && endPadding > padding {
+			return valueString, stringVal[startIdx-padding : endIdx+padding]
+		}
+	}
+
+	return valueString, valueString
 }
