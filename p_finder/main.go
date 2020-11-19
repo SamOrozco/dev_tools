@@ -56,6 +56,10 @@ func main() {
 		if !info.IsDir() {
 			fileSearchWaitGroup.Add(1)
 			go searchFile(path, regexPattern, fileChan, fileSearchWaitGroup)
+		} else {
+			if regexPattern.MatchString(path) {
+				color.Red(path)
+			}
 		}
 		return nil
 	})
