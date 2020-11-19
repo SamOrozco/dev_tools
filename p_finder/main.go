@@ -58,7 +58,7 @@ func main() {
 			go searchFile(path, regexPattern, fileChan, fileSearchWaitGroup)
 		} else {
 			if regexPattern.MatchString(path) {
-				color.Red("Dir > " + path)
+				color.Red(path)
 			}
 		}
 		return nil
