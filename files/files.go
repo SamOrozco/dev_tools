@@ -45,3 +45,24 @@ func RemoveDir(dirLocation string) error {
 func ReadBytesFromFile(fileLocation string) ([]byte, error) {
 	return ioutil.ReadFile(fileLocation)
 }
+
+func ReadStringFromFile(fileLocation string) (string, error) {
+	data, err := ioutil.ReadFile(fileLocation)
+	if err != nil {
+		return "", err
+	}
+	return string(data), err
+}
+
+func IsDir(filePath string) bool {
+	stat, err := os.Stat(filePath)
+	if err != nil {
+		return false
+	}
+	switch mode := stat.Mode(); {
+	case mode.IsDir():
+		return true
+	default:
+		return false
+	}
+}
