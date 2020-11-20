@@ -39,7 +39,7 @@ func main() {
 			matchValue := file.MatchValue
 			matchValueWithPadding := file.MatchValueWithPadding
 			color.Blue(path)
-			println(strings.ReplaceAll(matchValueWithPadding, matchValue, color.HiGreenString(matchValue)))
+			println(strings.ReplaceAll(matchValueWithPadding, matchValue, color.HiMagentaString(matchValue)))
 
 			// this will dec wait group so we can be sure to print
 			// file not containing value will close wait group
@@ -63,7 +63,6 @@ func main() {
 		}
 		return nil
 	})
-
 	if err != nil {
 		panic(err)
 	}

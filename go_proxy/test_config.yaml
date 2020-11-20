@@ -1,0 +1,8 @@
+match:
+  type: 'path'
+  path_match:
+    match_value: '/test'
+    match_type: 'eq'
+proxy:
+  host: localhost
+  port: 9005
