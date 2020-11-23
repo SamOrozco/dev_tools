@@ -245,9 +245,9 @@ func Execute() {
 }
 
 func LogSearchingFile(name string) {
-	println(color.BlueBg(fmt.Sprintf("searching %s...", name)))
+	println(color.BlueBg(fmt.Sprintf("searching [%s]", name)))
 }
 
 func LogSearchingDir(name string) {
-	println(color.RedBg(fmt.Sprintf("searching %s...", name)))
+	println(color.RedBg(fmt.Sprintf("searching [%s]", name)))
 }
