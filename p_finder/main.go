@@ -17,6 +17,7 @@ type RegexMatch struct {
 	FilePath              string
 	MatchValue            string
 	MatchValueWithPadding string
+	IsDir                 bool
 }
 
 var (
@@ -56,7 +57,8 @@ func pfDir(pattern, dir string, dirsOnly bool) {
 	fileChan := make(chan *RegexMatch, 0)
 
 	// start listening in file chan
-	go printFoundValues(fileChan, fileSearchWaitGroup)
+	printValues := make([]string, 0)
+	go handleFoundValues(fileChan, fileSearchWaitGroup, &printValues)
 
 	if files.IsDir(dir) {
 		fileSearchWaitGroup.Add(1)
@@ -65,7 +67,11 @@ func pfDir(pattern, dir string, dirsOnly bool) {
 		fileSearchWaitGroup.Add(1)
 		go searchFileAsync(dir, regexPattern, fileChan, fileSearchWaitGroup)
 	}
+
 	fileSearchWaitGroup.Wait()
+	for i := range printValues {
+		println(printValues[i])
+	}
 }
 
 /**
@@ -145,14 +151,17 @@ func getPrintValue(dataBytes []byte, pattern *regexp.Regexp) (string, string) {
 	return valueString, valueString
 }
 
-func printFoundValues(fileChan chan *RegexMatch, fileSearchWaitGroup *sync.WaitGroup) {
+func handleFoundValues(
+	fileChan chan *RegexMatch,
+	fileSearchWaitGroup *sync.WaitGroup,
+	printValues *[]string,
+) {
 	for file := range fileChan {
 		path := file.FilePath
 		matchValue := file.MatchValue
 		matchValueWithPadding := file.MatchValueWithPadding
-		color.Blue(path)
-		println(strings.ReplaceAll(matchValueWithPadding, matchValue, color.HiMagentaString(matchValue)))
-
+		*printValues = append(*printValues, color.BlueString(path))
+		*printValues = append(*printValues, strings.ReplaceAll(matchValueWithPadding, matchValue, color.HiMagentaString(matchValue)))
 		// this will dec wait group so we can be sure to print
 		// file not containing value will close wait group
 		fileSearchWaitGroup.Done()
