@@ -14,9 +14,10 @@ import (
 )
 
 type AppOptions struct {
-	DirsOnly       bool
-	FilesOnly      bool
-	VerboseLogging bool
+	DirsOnly              bool
+	FilesOnly             bool
+	VerboseLogging        bool
+	ExcludeFileExtensions map[string]bool
 }
 
 type RegexMatch struct {
@@ -27,10 +28,11 @@ type RegexMatch struct {
 }
 
 var (
-	DirsOnly       bool // search dirs only flag name
-	VerboseLogging bool // enable verbose logging
-	FilesOnly      bool // enable verbose logging
-	rootCmd        = &cobra.Command{
+	DirsOnly              bool   // search dirs only flag name
+	VerboseLogging        bool   // enable verbose logging
+	FilesOnly             bool   // enable verbose logging
+	ExcludedFileExtension string // csv of excluded file extensions
+	rootCmd               = &cobra.Command{
 		Use:   "hugo",
 		Short: "Hugo is a very fast static site generator",
 		Long: `A Fast and Flexible Static Site Generator built with
@@ -43,8 +45,9 @@ var (
 			pattern := args[0]
 			findDir := args[1]
 			pfDir(pattern, findDir, &AppOptions{
-				DirsOnly:       DirsOnly,
-				VerboseLogging: VerboseLogging,
+				DirsOnly:              DirsOnly,
+				VerboseLogging:        VerboseLogging,
+				ExcludeFileExtensions: convertCsvToFlagMap(ExcludedFileExtension),
 			})
 		},
 	}
@@ -54,6 +57,7 @@ func main() {
 	rootCmd.PersistentFlags().BoolVarP(&DirsOnly, "dirs", "d", false, "find in dir names only")
 	rootCmd.PersistentFlags().BoolVarP(&VerboseLogging, "verbose", "v", false, "enable verbose logging")
 	rootCmd.PersistentFlags().BoolVarP(&FilesOnly, "files", "f", false, "find in files only")
+	rootCmd.PersistentFlags().StringVarP(&ExcludedFileExtension, "excluded-file-extensions", "x", "", "comma separated list of excluded file extensions")
 	Execute()
 }
 
@@ -161,6 +165,15 @@ func searchFileAsync(
 		LogSearchingFile(filePath)
 	}
 
+	// if we have file extensions check this file
+	if len(options.ExcludeFileExtensions) > 0 {
+		ext := strings.ToLower(filepath.Ext(filePath))
+		if _, exists := options.ExcludeFileExtensions[ext]; exists {
+			wg.Done() // this files extension has been excluded
+			return
+		}
+	}
+
 	dataBytes, err := files.ReadBytesFromFile(filePath)
 	if err != nil {
 		wg.Done()
@@ -242,6 +255,9 @@ func handleFoundValues(
 	}
 }
 
+/**
+exec command
+*/
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -249,10 +265,29 @@ func Execute() {
 	}
 }
 
+/**
+log searching file
+*/
 func LogSearchingFile(name string) {
 	println(color.BlueBg(fmt.Sprintf("searching [%s]", name)))
 }
 
+/**
+log search dir
+*/
 func LogSearchingDir(name string) {
 	println(color.RedBg(fmt.Sprintf("searching [%s]", name)))
+}
+
+func convertCsvToFlagMap(csvString string) map[string]bool {
+	result := make(map[string]bool)
+	if len(csvString) < 1 {
+		return result
+	}
+
+	segments := strings.Split(csvString, ",")
+	for i := range segments {
+		result[strings.ToLower(strings.TrimSpace(segments[i]))] = true
+	}
+	return result
 }
