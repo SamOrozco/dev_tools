@@ -3,6 +3,7 @@ package main
 import (
 	"dev_tools/files"
 	"github.com/fatih/color"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -33,44 +34,49 @@ func main() {
 	fileChan := make(chan *RegexMatch, 0)
 
 	// start listening in file chan
-	go func() {
-		for file := range fileChan {
-			path := file.FilePath
-			matchValue := file.MatchValue
-			matchValueWithPadding := file.MatchValueWithPadding
-			color.Blue(path)
-			println(strings.ReplaceAll(matchValueWithPadding, matchValue, color.HiMagentaString(matchValue)))
+	go printFoundValues(fileChan, fileSearchWaitGroup)
 
-			// this will dec wait group so we can be sure to print
-			// file not containing value will close wait group
-			fileSearchWaitGroup.Done()
-		}
-	}()
-
-	// walk file path and for every file search for value
-	err = filepath.Walk(findDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		// if file not dir look for value
-		if !info.IsDir() {
-			fileSearchWaitGroup.Add(1)
-			go searchFile(path, regexPattern, fileChan, fileSearchWaitGroup)
-		} else {
-			if regexPattern.MatchString(path) {
-				color.Red(path)
-			}
-		}
-		return nil
-	})
-	if err != nil {
-		panic(err)
+	if files.IsDir(findDir) {
+		fileSearchWaitGroup.Add(1)
+		go searchDirAsync(findDir, regexPattern, fileChan, fileSearchWaitGroup)
+	} else {
+		fileSearchWaitGroup.Add(1)
+		go searchFileAsync(findDir, regexPattern, fileChan, fileSearchWaitGroup)
 	}
+
 	fileSearchWaitGroup.Wait()
 }
 
-// if file contains regex pattern write file path to chan
-func searchFile(filePath string, pattern *regexp.Regexp, fileChan chan *RegexMatch, wg *sync.WaitGroup) {
+/**
+Recursively search the directory for the regex pattern in files
+*/
+func searchDirAsync(dirPath string, regex *regexp.Regexp, fileChan chan *RegexMatch, wg *sync.WaitGroup) {
+	dirFiles, err := ioutil.ReadDir(dirPath)
+	if err != nil {
+		wg.Done()
+		return
+	}
+
+	for i := range dirFiles {
+		currentFile := dirFiles[i]
+		currentFilePath := filepath.Join(dirPath, currentFile.Name())
+
+		if files.IsDir(currentFilePath) {
+			wg.Add(1)
+			go searchDirAsync(currentFilePath, regex, fileChan, wg)
+		} else {
+			wg.Add(1)
+			go searchFileAsync(currentFilePath, regex, fileChan, wg)
+		}
+	}
+	wg.Done()
+}
+
+/**
+searches the given file as for the given pattern
+if we find pattern value in file data we will pass file location to fileChan
+*/
+func searchFileAsync(filePath string, pattern *regexp.Regexp, fileChan chan *RegexMatch, wg *sync.WaitGroup) {
 	dataBytes, err := files.ReadBytesFromFile(filePath)
 	if err != nil {
 		wg.Done()
@@ -91,6 +97,9 @@ func searchFile(filePath string, pattern *regexp.Regexp, fileChan chan *RegexMat
 	}
 }
 
+/**
+Gets print values for the current data
+*/
 func getPrintValue(dataBytes []byte, pattern *regexp.Regexp) (string, string) {
 	stringVal := string(dataBytes)
 	indexes := pattern.FindStringIndex(stringVal)
@@ -107,6 +116,19 @@ func getPrintValue(dataBytes []byte, pattern *regexp.Regexp) (string, string) {
 			return valueString, stringVal[startIdx-padding : endIdx+padding]
 		}
 	}
-
 	return valueString, valueString
+}
+
+func printFoundValues(fileChan chan *RegexMatch, fileSearchWaitGroup *sync.WaitGroup) {
+	for file := range fileChan {
+		path := file.FilePath
+		matchValue := file.MatchValue
+		matchValueWithPadding := file.MatchValueWithPadding
+		color.Blue(path)
+		println(strings.ReplaceAll(matchValueWithPadding, matchValue, color.HiMagentaString(matchValue)))
+
+		// this will dec wait group so we can be sure to print
+		// file not containing value will close wait group
+		fileSearchWaitGroup.Done()
+	}
 }
