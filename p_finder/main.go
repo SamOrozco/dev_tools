@@ -2,7 +2,9 @@ package main
 
 import (
 	"dev_tools/files"
+	"fmt"
 	"github.com/fatih/color"
+	"github.com/spf13/cobra"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -17,14 +19,34 @@ type RegexMatch struct {
 	MatchValueWithPadding string
 }
 
-func main() {
-	if len(os.Args) < 3 {
-		panic("must pass pattern and directory e.g. `pf ^.*test$ test_dir/`")
+var (
+	DirsOnly bool // search dirs only flag name
+	rootCmd  = &cobra.Command{
+		Use:   "hugo",
+		Short: "Hugo is a very fast static site generator",
+		Long: `A Fast and Flexible Static Site Generator built with
+                love by spf13 and friends in Go.
+                Complete documentation is available at http://hugo.spf13.com`,
+		Run: func(cmd *cobra.Command, args []string) {
+			if len(args) < 2 {
+				panic("must pass pattern and directory e.g. `pf ^.*test$ test_dir/`")
+			}
+			pattern := args[0]
+			findDir := args[1]
+			pfDir(pattern, findDir, DirsOnly)
+		},
 	}
+)
 
-	pattern := os.Args[1]
-	findDir := os.Args[2]
+func main() {
+	rootCmd.PersistentFlags().BoolVarP(&DirsOnly, "dirs", "d", false, "find in dir names only")
+	Execute()
+}
 
+/**
+PF the given dir
+*/
+func pfDir(pattern, dir string, dirsOnly bool) {
 	regexPattern, err := regexp.Compile(pattern)
 	if err != nil {
 		panic(err)
@@ -36,21 +58,25 @@ func main() {
 	// start listening in file chan
 	go printFoundValues(fileChan, fileSearchWaitGroup)
 
-	if files.IsDir(findDir) {
+	if files.IsDir(dir) {
 		fileSearchWaitGroup.Add(1)
-		go searchDirAsync(findDir, regexPattern, fileChan, fileSearchWaitGroup)
+		go searchDirAsync(dir, regexPattern, fileChan, fileSearchWaitGroup)
 	} else {
 		fileSearchWaitGroup.Add(1)
-		go searchFileAsync(findDir, regexPattern, fileChan, fileSearchWaitGroup)
+		go searchFileAsync(dir, regexPattern, fileChan, fileSearchWaitGroup)
 	}
-
 	fileSearchWaitGroup.Wait()
 }
 
 /**
 Recursively search the directory for the regex pattern in files
 */
-func searchDirAsync(dirPath string, regex *regexp.Regexp, fileChan chan *RegexMatch, wg *sync.WaitGroup) {
+func searchDirAsync(
+	dirPath string,
+	regex *regexp.Regexp,
+	fileChan chan *RegexMatch,
+	wg *sync.WaitGroup,
+) {
 	dirFiles, err := ioutil.ReadDir(dirPath)
 	if err != nil {
 		wg.Done()
@@ -130,5 +156,12 @@ func printFoundValues(fileChan chan *RegexMatch, fileSearchWaitGroup *sync.WaitG
 		// this will dec wait group so we can be sure to print
 		// file not containing value will close wait group
 		fileSearchWaitGroup.Done()
+	}
+}
+
+func Execute() {
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
 }
