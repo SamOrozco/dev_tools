@@ -3,7 +3,7 @@ package main
 import (
 	"dev_tools/files"
 	"fmt"
-	"github.com/fatih/color"
+	"github.com/labstack/gommon/color"
 	"github.com/spf13/cobra"
 	"io/ioutil"
 	"os"
@@ -13,6 +13,11 @@ import (
 	"sync"
 )
 
+type AppOptions struct {
+	DirsOnly       bool
+	VerboseLogging bool
+}
+
 type RegexMatch struct {
 	FilePath              string
 	MatchValue            string
@@ -21,8 +26,9 @@ type RegexMatch struct {
 }
 
 var (
-	DirsOnly bool // search dirs only flag name
-	rootCmd  = &cobra.Command{
+	DirsOnly       bool // search dirs only flag name
+	VerboseLogging bool // enable verbose logging
+	rootCmd        = &cobra.Command{
 		Use:   "hugo",
 		Short: "Hugo is a very fast static site generator",
 		Long: `A Fast and Flexible Static Site Generator built with
@@ -34,20 +40,26 @@ var (
 			}
 			pattern := args[0]
 			findDir := args[1]
-			pfDir(pattern, findDir, DirsOnly)
+			pfDir(pattern, findDir, &AppOptions{
+				DirsOnly:       DirsOnly,
+				VerboseLogging: VerboseLogging,
+			})
 		},
 	}
 )
 
 func main() {
 	rootCmd.PersistentFlags().BoolVarP(&DirsOnly, "dirs", "d", false, "find in dir names only")
+	rootCmd.PersistentFlags().BoolVarP(&VerboseLogging, "verbose", "v", false, "enable verbose logging")
 	Execute()
 }
 
 /**
 PF the given dir
 */
-func pfDir(pattern, dir string, dirsOnly bool) {
+func pfDir(pattern, dir string, options *AppOptions) {
+	println(fmt.Sprintf(color.Green("searching for \"%s\""), pattern))
+
 	regexPattern, err := regexp.Compile(pattern)
 	if err != nil {
 		panic(err)
@@ -62,15 +74,33 @@ func pfDir(pattern, dir string, dirsOnly bool) {
 
 	if files.IsDir(dir) {
 		fileSearchWaitGroup.Add(1)
-		go searchDirAsync(dir, regexPattern, fileChan, fileSearchWaitGroup)
-	} else {
+		go searchDirAsync(
+			dir,
+			regexPattern,
+			fileChan,
+			fileSearchWaitGroup,
+			options,
+		)
+	} else if !options.DirsOnly {
 		fileSearchWaitGroup.Add(1)
-		go searchFileAsync(dir, regexPattern, fileChan, fileSearchWaitGroup)
+		go searchFileAsync(
+			dir,
+			regexPattern,
+			fileChan,
+			fileSearchWaitGroup,
+			options,
+		)
 	}
 
+	// wait for all to finish
 	fileSearchWaitGroup.Wait()
-	for i := range printValues {
-		println(printValues[i])
+
+	if len(printValues) < 1 {
+		println(color.Green("no matches!"))
+	} else {
+		for i := range printValues {
+			println(printValues[i])
+		}
 	}
 }
 
@@ -82,23 +112,30 @@ func searchDirAsync(
 	regex *regexp.Regexp,
 	fileChan chan *RegexMatch,
 	wg *sync.WaitGroup,
+	options *AppOptions,
 ) {
+
+	if options.VerboseLogging {
+		LogSearchingDir(dirPath)
+	}
+
 	dirFiles, err := ioutil.ReadDir(dirPath)
 	if err != nil {
 		wg.Done()
 		return
 	}
-
 	for i := range dirFiles {
 		currentFile := dirFiles[i]
 		currentFilePath := filepath.Join(dirPath, currentFile.Name())
-
 		if files.IsDir(currentFilePath) {
+			// send dir name if it matches
+			sendDirValueIfApplicable(currentFilePath, regex, wg, fileChan)
+			// recurse
 			wg.Add(1)
-			go searchDirAsync(currentFilePath, regex, fileChan, wg)
-		} else {
+			go searchDirAsync(currentFilePath, regex, fileChan, wg, options)
+		} else if !options.DirsOnly {
 			wg.Add(1)
-			go searchFileAsync(currentFilePath, regex, fileChan, wg)
+			go searchFileAsync(currentFilePath, regex, fileChan, wg, options)
 		}
 	}
 	wg.Done()
@@ -108,7 +145,17 @@ func searchDirAsync(
 searches the given file as for the given pattern
 if we find pattern value in file data we will pass file location to fileChan
 */
-func searchFileAsync(filePath string, pattern *regexp.Regexp, fileChan chan *RegexMatch, wg *sync.WaitGroup) {
+func searchFileAsync(
+	filePath string,
+	pattern *regexp.Regexp,
+	fileChan chan *RegexMatch,
+	wg *sync.WaitGroup,
+	options *AppOptions,
+) {
+	if options.VerboseLogging {
+		LogSearchingFile(filePath)
+	}
+
 	dataBytes, err := files.ReadBytesFromFile(filePath)
 	if err != nil {
 		wg.Done()
@@ -120,12 +167,27 @@ func searchFileAsync(filePath string, pattern *regexp.Regexp, fileChan chan *Reg
 			FilePath:              filePath,
 			MatchValue:            matchVal,
 			MatchValueWithPadding: matchValueWithPadding,
+			IsDir:                 false,
 		}
 	} else {
 
 		// only on error or not containing value will we close wait group here
 		// otherwise printing go routine will close wait group after printing.
 		wg.Done()
+	}
+}
+
+func sendDirValueIfApplicable(
+	currentPath string,
+	reg *regexp.Regexp,
+	wg *sync.WaitGroup,
+	fileChan chan *RegexMatch) {
+	if reg.MatchString(currentPath) {
+		wg.Add(1) // need add because we remove in handling values
+		fileChan <- &RegexMatch{
+			FilePath: currentPath,
+			IsDir:    true,
+		}
 	}
 }
 
@@ -160,8 +222,15 @@ func handleFoundValues(
 		path := file.FilePath
 		matchValue := file.MatchValue
 		matchValueWithPadding := file.MatchValueWithPadding
-		*printValues = append(*printValues, color.BlueString(path))
-		*printValues = append(*printValues, strings.ReplaceAll(matchValueWithPadding, matchValue, color.HiMagentaString(matchValue)))
+
+		// directory is a special case
+		if file.IsDir {
+			*printValues = append(*printValues, color.Red(path))
+		} else { // if file
+			*printValues = append(*printValues, color.Blue(path))
+			*printValues = append(*printValues, strings.ReplaceAll(matchValueWithPadding, matchValue, color.MagentaBg(matchValue)))
+		}
+
 		// this will dec wait group so we can be sure to print
 		// file not containing value will close wait group
 		fileSearchWaitGroup.Done()
@@ -173,4 +242,12 @@ func Execute() {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
+}
+
+func LogSearchingFile(name string) {
+	println(color.BlueBg(fmt.Sprintf("searching %s...", name)))
+}
+
+func LogSearchingDir(name string) {
+	println(color.RedBg(fmt.Sprintf("searching %s...", name)))
 }
