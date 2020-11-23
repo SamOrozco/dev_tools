@@ -15,6 +15,7 @@ import (
 
 type AppOptions struct {
 	DirsOnly       bool
+	FilesOnly      bool
 	VerboseLogging bool
 }
 
@@ -28,6 +29,7 @@ type RegexMatch struct {
 var (
 	DirsOnly       bool // search dirs only flag name
 	VerboseLogging bool // enable verbose logging
+	FilesOnly      bool // enable verbose logging
 	rootCmd        = &cobra.Command{
 		Use:   "hugo",
 		Short: "Hugo is a very fast static site generator",
@@ -51,6 +53,7 @@ var (
 func main() {
 	rootCmd.PersistentFlags().BoolVarP(&DirsOnly, "dirs", "d", false, "find in dir names only")
 	rootCmd.PersistentFlags().BoolVarP(&VerboseLogging, "verbose", "v", false, "enable verbose logging")
+	rootCmd.PersistentFlags().BoolVarP(&FilesOnly, "files", "f", false, "find in files only")
 	Execute()
 }
 
@@ -129,7 +132,9 @@ func searchDirAsync(
 		currentFilePath := filepath.Join(dirPath, currentFile.Name())
 		if files.IsDir(currentFilePath) {
 			// send dir name if it matches
-			sendDirValueIfApplicable(currentFilePath, regex, wg, fileChan)
+			if !options.FilesOnly {
+				sendDirValueIfApplicable(currentFilePath, regex, wg, fileChan)
+			}
 			// recurse
 			wg.Add(1)
 			go searchDirAsync(currentFilePath, regex, fileChan, wg, options)
