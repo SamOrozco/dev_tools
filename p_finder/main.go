@@ -26,7 +26,7 @@ type RegexMatch struct {
 	FilePath              string
 	MatchValue            string
 	MatchValueWithPadding string
-	IsDir                 bool
+	IsPathName            bool
 }
 
 var (
@@ -37,11 +37,9 @@ var (
 	IncludedFileExtension string // csv of only file extensions we want to search for
 	MaxDepth              int
 	rootCmd               = &cobra.Command{
-		Use:   "hugo",
-		Short: "Hugo is a very fast static site generator",
-		Long: `A Fast and Flexible Static Site Generator built with
-                love by spf13 and friends in Go.
-                Complete documentation is available at http://hugo.spf13.com`,
+		Use:   "pf",
+		Short: "pattern finder",
+		Long:  `A fast and configurable pattern finder in files contents.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			if len(args) < 2 {
 				panic("must pass pattern and directory e.g. `pf ^.*test$ test_dir/`")
@@ -163,6 +161,7 @@ func searchDirAsync(
 			wg.Add(1)
 			go searchDirAsync(currentFilePath, regex, fileChan, wg, options, depth+1)
 		} else if !options.DirsOnly {
+			sendDirValueIfApplicable(currentFilePath, regex, wg, fileChan)
 			wg.Add(1)
 			go searchFileAsync(currentFilePath, regex, fileChan, wg, options, depth+1)
 		}
@@ -211,7 +210,7 @@ func searchFileAsync(
 			FilePath:              filePath,
 			MatchValue:            matchVal,
 			MatchValueWithPadding: matchValueWithPadding,
-			IsDir:                 false,
+			IsPathName:            false,
 		}
 	} else {
 
@@ -260,8 +259,8 @@ func sendDirValueIfApplicable(
 	if reg.MatchString(currentPath) {
 		wg.Add(1) // need add because we remove in handling values
 		fileChan <- &RegexMatch{
-			FilePath: currentPath,
-			IsDir:    true,
+			FilePath:   currentPath,
+			IsPathName: true,
 		}
 	}
 }
@@ -299,7 +298,7 @@ func handleFoundValues(
 		matchValueWithPadding := file.MatchValueWithPadding
 
 		// directory is a special case
-		if file.IsDir {
+		if file.IsPathName {
 			*printValues = append(*printValues, color.Red(path))
 		} else { // if file
 			*printValues = append(*printValues, color.Blue(path))
