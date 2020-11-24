@@ -45,6 +45,7 @@ var (
 				panic("must pass pattern and directory e.g. `pf ^.*test$ test_dir/`")
 			}
 			pattern := args[0]
+			pattern = patternReplace(pattern)
 			findDir := args[1]
 			pfDir(pattern, findDir, &AppOptions{
 				DirsOnly:              DirsOnly,
@@ -353,4 +354,23 @@ func convertCsvToFlagMap(csvString string) map[string]bool {
 		result[strings.ToLower(strings.TrimSpace(segments[i]))] = true
 	}
 	return result
+}
+
+func patternReplace(pattern string) string {
+	if strings.ToLower(strings.TrimSpace(pattern)) == "email" {
+		// email regex
+		return `([-!#-'*+/-9=?A-Z^-~]+(\.[-!#-'*+/-9=?A-Z^-~]+)*|"([]!#-[^-~ \t]|(\\[\t -~]))+")@[0-9A-Za-z]([0-9A-Za-z-]{0,61}[0-9A-Za-z])?(\.[0-9A-Za-z]([0-9A-Za-z-]{0,61}[0-9A-Za-z])?)+`
+	}
+
+	if strings.ToLower(strings.TrimSpace(pattern)) == "phone" {
+		// phone regex
+		return `^(\+\d{1,2}\s?)?1?\-?\.?\s?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$`
+	}
+
+	if strings.ToLower(strings.TrimSpace(pattern)) == "url" {
+		// url regex
+		return `https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)`
+	}
+
+	return pattern
 }
