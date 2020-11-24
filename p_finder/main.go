@@ -18,6 +18,8 @@ type AppOptions struct {
 	FilesOnly             bool
 	VerboseLogging        bool
 	ExcludeFileExtensions map[string]bool
+	IncludeFileExtensions map[string]bool
+	MaxDepth              int
 }
 
 type RegexMatch struct {
@@ -32,6 +34,8 @@ var (
 	VerboseLogging        bool   // enable verbose logging
 	FilesOnly             bool   // enable verbose logging
 	ExcludedFileExtension string // csv of excluded file extensions
+	IncludedFileExtension string // csv of only file extensions we want to search for
+	MaxDepth              int
 	rootCmd               = &cobra.Command{
 		Use:   "hugo",
 		Short: "Hugo is a very fast static site generator",
@@ -48,6 +52,8 @@ var (
 				DirsOnly:              DirsOnly,
 				VerboseLogging:        VerboseLogging,
 				ExcludeFileExtensions: convertCsvToFlagMap(ExcludedFileExtension),
+				IncludeFileExtensions: convertCsvToFlagMap(IncludedFileExtension),
+				MaxDepth:              MaxDepth,
 			})
 		},
 	}
@@ -58,6 +64,8 @@ func main() {
 	rootCmd.PersistentFlags().BoolVarP(&VerboseLogging, "verbose", "v", false, "enable verbose logging")
 	rootCmd.PersistentFlags().BoolVarP(&FilesOnly, "files", "f", false, "find in files only")
 	rootCmd.PersistentFlags().StringVarP(&ExcludedFileExtension, "excluded-file-extensions", "x", "", "comma separated list of excluded file extensions")
+	rootCmd.PersistentFlags().StringVarP(&IncludedFileExtension, "included-file-extensions", "i", "", "comma separated list of included file extensions")
+	rootCmd.PersistentFlags().IntVarP(&MaxDepth, "max-depth", "m", 10, "max directory depth we will search defaults 30")
 	Execute()
 }
 
@@ -87,6 +95,7 @@ func pfDir(pattern, dir string, options *AppOptions) {
 			fileChan,
 			fileSearchWaitGroup,
 			options,
+			0,
 		)
 	} else if !options.DirsOnly {
 		fileSearchWaitGroup.Add(1)
@@ -96,6 +105,7 @@ func pfDir(pattern, dir string, options *AppOptions) {
 			fileChan,
 			fileSearchWaitGroup,
 			options,
+			0,
 		)
 	}
 
@@ -120,7 +130,17 @@ func searchDirAsync(
 	fileChan chan *RegexMatch,
 	wg *sync.WaitGroup,
 	options *AppOptions,
+	depth int,
 ) {
+
+	// max depth check
+	if depth >= (options.MaxDepth - 1) {
+		if options.VerboseLogging {
+			LogHitMaxDepth(dirPath)
+		}
+		wg.Done()
+		return
+	}
 
 	if options.VerboseLogging {
 		LogSearchingDir(dirPath)
@@ -141,10 +161,10 @@ func searchDirAsync(
 			}
 			// recurse
 			wg.Add(1)
-			go searchDirAsync(currentFilePath, regex, fileChan, wg, options)
+			go searchDirAsync(currentFilePath, regex, fileChan, wg, options, depth+1)
 		} else if !options.DirsOnly {
 			wg.Add(1)
-			go searchFileAsync(currentFilePath, regex, fileChan, wg, options)
+			go searchFileAsync(currentFilePath, regex, fileChan, wg, options, depth+1)
 		}
 	}
 	wg.Done()
@@ -160,18 +180,24 @@ func searchFileAsync(
 	fileChan chan *RegexMatch,
 	wg *sync.WaitGroup,
 	options *AppOptions,
+	depth int,
 ) {
+
+	// max depth check
+	if depth >= options.MaxDepth {
+		LogHitMaxDepth(filePath)
+		wg.Done()
+		return
+	}
+
 	if options.VerboseLogging {
 		LogSearchingFile(filePath)
 	}
 
 	// if we have file extensions check this file
-	if len(options.ExcludeFileExtensions) > 0 {
-		ext := strings.ToLower(filepath.Ext(filePath))
-		if _, exists := options.ExcludeFileExtensions[ext]; exists {
-			wg.Done() // this files extension has been excluded
-			return
-		}
+	if fileIsExcludedBecauseOfExtensionParam(filePath, options.IncludeFileExtensions, options.ExcludeFileExtensions) {
+		wg.Done() // this files extension has been excluded
+		return
 	}
 
 	dataBytes, err := files.ReadBytesFromFile(filePath)
@@ -195,6 +221,37 @@ func searchFileAsync(
 	}
 }
 
+func fileIsExcludedBecauseOfExtensionParam(filePath string, includedExtensions, excludedExtensions map[string]bool) bool {
+	if (includedExtensions == nil || len(includedExtensions) < 1) &&
+		(excludedExtensions == nil || len(excludedExtensions) < 1) {
+		return false
+	}
+
+	// included overrides excluded
+	if includedExtensions != nil && len(includedExtensions) > 0 {
+		// handle included
+		toLowerExtension := strings.ToLower(filepath.Ext(filePath))
+		if _, exists := includedExtensions[toLowerExtension]; exists {
+			// included
+			return false
+		} else {
+			return true
+		}
+	} else {
+		// handle excluded
+		toLowerExtension := strings.ToLower(filepath.Ext(filePath))
+		if _, exists := excludedExtensions[toLowerExtension]; exists {
+			// included
+			return true
+		} else {
+			return false
+		}
+	}
+}
+
+/**
+send dir name to file chan if applicable
+*/
 func sendDirValueIfApplicable(
 	currentPath string,
 	reg *regexp.Regexp,
@@ -279,6 +336,13 @@ func LogSearchingDir(name string) {
 	println(color.RedBg(fmt.Sprintf("searching [%s]", name)))
 }
 
+func LogHitMaxDepth(filePath string) {
+	println(color.RedBg(fmt.Sprintf("hit max depth at %s", filePath)))
+}
+
+/**
+converts csv to key boolean map for searching
+*/
 func convertCsvToFlagMap(csvString string) map[string]bool {
 	result := make(map[string]bool)
 	if len(csvString) < 1 {
