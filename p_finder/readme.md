@@ -1,0 +1,1 @@
+Searches directories for a pattern
