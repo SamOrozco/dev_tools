@@ -118,9 +118,7 @@ func pfDir(pattern, dir string, options *AppOptions) {
 	if len(printValues) < 1 {
 		println(color.Green("no matches!"))
 	} else {
-		for i := range printValues {
-			println(printValues[i])
-		}
+		println(strings.Join(printValues, "\n"))
 	}
 }
 
