@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"time"
 )
 
 type AppOptions struct {
@@ -47,6 +48,8 @@ var (
 			pattern := args[0]
 			pattern = patternReplace(pattern)
 			findDir := args[1]
+
+			startTime := time.Now()
 			pfDir(pattern, findDir, &AppOptions{
 				DirsOnly:              DirsOnly,
 				VerboseLogging:        VerboseLogging,
@@ -54,6 +57,7 @@ var (
 				IncludeFileExtensions: convertCsvToFlagMap(IncludedFileExtension),
 				MaxDepth:              MaxDepth,
 			})
+			LogTimeRan(startTime)
 		},
 	}
 )
@@ -356,6 +360,9 @@ func convertCsvToFlagMap(csvString string) map[string]bool {
 	return result
 }
 
+/**
+If pattern matches presets replace
+*/
 func patternReplace(pattern string) string {
 	if strings.ToLower(strings.TrimSpace(pattern)) == "email" {
 		// email regex
@@ -373,4 +380,11 @@ func patternReplace(pattern string) string {
 	}
 
 	return pattern
+}
+
+func LogTimeRan(startTime time.Time) {
+	println()
+	println()
+	timeSince := time.Since(startTime)
+	println(color.BlueBg(fmt.Sprintf("ran in %dms", timeSince.Milliseconds())))
 }
