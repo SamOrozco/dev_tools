@@ -12,6 +12,7 @@ type User struct {
 func main() {
 	e := echo.New()
 	e.GET("/test", func(context echo.Context) error {
+		println("sam")
 		return context.JSON(200, User{
 			UserName: "sam",
 		})
@@ -26,5 +27,5 @@ func main() {
 			UserName: "sam",
 		})
 	})
-	panic(e.Start(":9005"))
+	panic(e.Start(":9006"))
 }

@@ -2,7 +2,7 @@ match:
   type: 'path'
   path_match:
     match_value: '/test'
-    match_type: 'eq'
+    match_type: 'ew'
 proxy:
   host: localhost
-  port: 9005
+  port: 9006
