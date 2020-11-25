@@ -68,7 +68,7 @@ func main() {
 	rootCmd.PersistentFlags().BoolVarP(&FilesOnly, "files", "f", false, "find in files only")
 	rootCmd.PersistentFlags().StringVarP(&ExcludedFileExtension, "excluded-file-extensions", "x", "", "comma separated list of excluded file extensions")
 	rootCmd.PersistentFlags().StringVarP(&IncludedFileExtension, "included-file-extensions", "i", "", "comma separated list of included file extensions")
-	rootCmd.PersistentFlags().IntVarP(&MaxDepth, "max-depth", "m", 10, "max directory depth we will search defaults 30")
+	rootCmd.PersistentFlags().IntVarP(&MaxDepth, "max-depth", "m", 4, "max directory depth we will search defaults 30")
 	Execute()
 }
 
