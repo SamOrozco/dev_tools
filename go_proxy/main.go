@@ -5,6 +5,8 @@ import (
 	"dev_tools/files"
 	"fmt"
 	"gopkg.in/yaml.v2"
+	"io"
+	"io/ioutil"
 	"net"
 	"os"
 	"strings"
@@ -61,6 +63,7 @@ func handleConfigFile(fileLocation string) {
 		panic(err)
 	}
 
+	println(fmt.Sprintf("listening on port %d", port))
 	for {
 		con, err := listener.Accept()
 		if err != nil {
@@ -71,10 +74,10 @@ func handleConfigFile(fileLocation string) {
 }
 
 func handleIncomingRequest(con net.Conn, mp ...*MatcherProxy) {
-	rdr := bufio.NewReader(con)
-	data := make([]byte, 2048) // todo improve this
+	defer con.Close()
 
-	if _, err := rdr.Read(data); err != nil {
+	data, err := readAllData(con)
+	if err != nil {
 		panic(err)
 	}
 
@@ -94,28 +97,14 @@ func handleIncomingRequest(con net.Conn, mp ...*MatcherProxy) {
 			if _, err := writeCon.Write(data); err != nil {
 				panic(err)
 			}
-			// wire response
-			buffer := make([]byte, 2048)
-			_, err = writeCon.Read(buffer)
-			if err != nil {
-				panic(err)
-			}
 
-			if _, err = con.Write(buffer); err != nil {
-				panic(err)
-			}
-			if err := writeCon.Close(); err != nil {
-				panic(err)
-			}
-			if err := con.Close(); err != nil {
-				panic(err)
-			}
+			transferWriter := io.TeeReader(writeCon, con)
+			// read all into response hopefully
+			ioutil.ReadAll(transferWriter)
+			// close con
+			writeCon.Close()
 		}
 	}
-}
-
-func handleMatcherProxy(mp *MatcherProxy) {
-
 }
 
 /**
@@ -141,4 +130,32 @@ makes a lot of assumptions but works
 */
 func getPathFromData(dataString string) string {
 	return strings.Split(strings.Split(dataString, "\n")[0], " ")[1]
+}
+
+func readAllData(reader io.Reader) ([]byte, error) {
+	if reader == nil {
+		return []byte{}, nil
+	}
+
+	bufferLength := 2048
+	completeReadValue := make([]byte, 0)
+	buffer := make([]byte, bufferLength)
+	readData := 1
+	var err error
+	rdr := bufio.NewReader(reader)
+
+	for readData > 0 {
+		readData, err = rdr.Read(buffer)
+		completeReadValue = append(completeReadValue, buffer...)
+		if err != nil {
+			return completeReadValue, err
+		}
+
+		// if we didn't read the whole buffer we know there shouldn't be any more data, I think!
+		if readData < bufferLength {
+			return completeReadValue, nil
+		}
+	}
+
+	return completeReadValue, nil
 }

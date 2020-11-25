@@ -1,18 +1,10 @@
-port: 9007
+port: 80
 proxies:
   - match:
       type: 'path'
       path_match:
-        match_value: '/test'
+        match_value: '/'
         match_type: 'sw'
     proxy:
-      host: google.com
-      port: 80
-  - match:
-      type: 'path'
-      path_match:
-        match_value: '/samo'
-        match_type: 'ew'
-    proxy:
-      host: news.ycombinator.com
-      port: 80
+      host: localhost
+      port: 8084
