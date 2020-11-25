@@ -86,25 +86,35 @@ func handleIncomingRequest(con net.Conn, mp ...*MatcherProxy) {
 	for i := range mp {
 		currentMatcherCheck := mp[i]
 		if currentMatcherCheck.Matcher.Path(path) {
-
-			// establish connection
-			writeCon, err := net.Dial("tcp", fmt.Sprintf("%s:%d", currentMatcherCheck.Proxy.Host, currentMatcherCheck.Proxy.Port))
-			if err != nil {
-				panic(err)
-			}
-
-			// write data
-			if _, err := writeCon.Write(data); err != nil {
-				panic(err)
-			}
-
-			transferWriter := io.TeeReader(writeCon, con)
-			// read all into response hopefully
-			ioutil.ReadAll(transferWriter)
-			// close con
-			writeCon.Close()
+			handleProxyMatch(currentMatcherCheck, data, con)
 		}
 	}
+}
+
+/**
+executes proxy when a request is matched
+*/
+func handleProxyMatch(
+	currentMatcherCheck *MatcherProxy,
+	requestData []byte,
+	originalConnection net.Conn,
+) {
+	// establish connection
+	writeCon, err := net.Dial("tcp", fmt.Sprintf("%s:%d", currentMatcherCheck.Proxy.Host, currentMatcherCheck.Proxy.Port))
+	if err != nil {
+		panic(err)
+	}
+
+	// write data
+	if _, err := writeCon.Write(requestData); err != nil {
+		panic(err)
+	}
+
+	transferWriter := io.TeeReader(writeCon, originalConnection)
+	// read all into response hopefully
+	ioutil.ReadAll(transferWriter)
+	// close con
+	writeCon.Close()
 }
 
 /**
