@@ -10,6 +10,7 @@ import (
 	"net"
 	"os"
 	"strings"
+	"sync"
 )
 
 type MatcherProxy struct {
@@ -83,12 +84,15 @@ func handleIncomingRequest(con net.Conn, mp ...*MatcherProxy) {
 
 	path := getPathFromData(string(data))
 
+	wg := sync.WaitGroup{}
 	for i := range mp {
 		currentMatcherCheck := mp[i]
 		if currentMatcherCheck.Matcher.Path(path) {
-			handleProxyMatch(currentMatcherCheck, data, con)
+			wg.Add(1)
+			go handleProxyMatch(currentMatcherCheck, data, con, &wg)
 		}
 	}
+	wg.Wait()
 }
 
 /**
@@ -98,6 +102,7 @@ func handleProxyMatch(
 	currentMatcherCheck *MatcherProxy,
 	requestData []byte,
 	originalConnection net.Conn,
+	wg *sync.WaitGroup,
 ) {
 	// establish connection
 	writeCon, err := net.Dial("tcp", fmt.Sprintf("%s:%d", currentMatcherCheck.Proxy.Host, currentMatcherCheck.Proxy.Port))
@@ -113,7 +118,8 @@ func handleProxyMatch(
 	transferWriter := io.TeeReader(writeCon, originalConnection)
 	// read all into response hopefully
 	ioutil.ReadAll(transferWriter)
-	// close con
+
+	wg.Done()
 	writeCon.Close()
 }
 
