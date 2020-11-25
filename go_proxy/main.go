@@ -74,6 +74,9 @@ func handleConfigFile(fileLocation string) {
 	}
 }
 
+/**
+handles incoming tcp request
+*/
 func handleIncomingRequest(con net.Conn, mp ...*MatcherProxy) {
 	defer con.Close()
 
