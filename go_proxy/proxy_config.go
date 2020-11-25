@@ -1,6 +1,11 @@
 package main
 
 type ProxyConfig struct {
+	Port    int           `yaml:"port"`
+	Proxies []*MatchProxy `yaml:"proxies"`
+}
+
+type MatchProxy struct {
 	Match *Match `yaml:"match"`
 	Proxy *Proxy `yaml:"proxy"`
 }

@@ -5,7 +5,6 @@ import (
 	"dev_tools/files"
 	"fmt"
 	"gopkg.in/yaml.v2"
-	"io/ioutil"
 	"net"
 	"os"
 	"strings"
@@ -22,7 +21,14 @@ func main() {
 	}
 
 	configFile := os.Args[1]
-	data, err := files.ReadBytesFromFile(configFile)
+	handleConfigFile(configFile)
+}
+
+/**
+program entry
+*/
+func handleConfigFile(fileLocation string) {
+	data, err := files.ReadBytesFromFile(fileLocation)
 	if err != nil {
 		panic(err)
 	}
@@ -32,8 +38,25 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	proxyConfig := buildProxyConfigFromConfig(proxyConf)
-	listener, err := net.Listen("tcp", ":9005")
+
+	port := 9005
+	if proxyConf.Port != 0 {
+		port = proxyConf.Port
+	}
+
+	// builds path matches
+	if proxyConf.Proxies == nil {
+		panic("must supply at least one proxy")
+	}
+
+	// collect matcher proxies
+	matcherProxies := make([]*MatcherProxy, len(proxyConf.Proxies))
+	for i := range proxyConf.Proxies {
+		prox := proxyConf.Proxies[i]
+		matcherProxies[i] = buildProxyConfigFromConfig(prox.Match, prox.Proxy)
+	}
+
+	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
 		panic(err)
 	}
@@ -43,58 +66,72 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		go handleIncomingRequest(con, proxyConfig)
+		go handleIncomingRequest(con, matcherProxies...)
 	}
 }
 
-func handleIncomingRequest(con net.Conn, mp *MatcherProxy) {
-	defer con.Close()
-	writer := bufio.NewWriter(con)
-	data, err := ioutil.ReadAll(con)
-	if err != nil {
+func handleIncomingRequest(con net.Conn, mp ...*MatcherProxy) {
+	rdr := bufio.NewReader(con)
+	data := make([]byte, 2048) // todo improve this
+
+	if _, err := rdr.Read(data); err != nil {
 		panic(err)
 	}
 
 	path := getPathFromData(string(data))
-	if mp.Matcher.Path(path) {
-		println("matches")
 
-		// establish connection
-		writeCon, err := net.Dial("tcp", fmt.Sprintf("%s:%d", mp.Proxy.Host, mp.Proxy.Port))
-		defer writeCon.Close()
-		if err != nil {
-			panic(err)
-		}
+	for i := range mp {
+		currentMatcherCheck := mp[i]
+		if currentMatcherCheck.Matcher.Path(path) {
 
-		// write data
-		if _, err := writeCon.Write(data); err != nil {
-			panic(err)
-		}
-		// wire response
-		buffer := make([]byte, 2048)
-		_, err = writeCon.Read(buffer)
-		if err != nil {
-			panic(err)
-		}
+			// establish connection
+			writeCon, err := net.Dial("tcp", fmt.Sprintf("%s:%d", currentMatcherCheck.Proxy.Host, currentMatcherCheck.Proxy.Port))
+			if err != nil {
+				panic(err)
+			}
 
-		if _, err = writer.Write(buffer); err != nil {
-			panic(err)
+			// write data
+			if _, err := writeCon.Write(data); err != nil {
+				panic(err)
+			}
+			// wire response
+			buffer := make([]byte, 2048)
+			_, err = writeCon.Read(buffer)
+			if err != nil {
+				panic(err)
+			}
+
+			if _, err = con.Write(buffer); err != nil {
+				panic(err)
+			}
+			if err := writeCon.Close(); err != nil {
+				panic(err)
+			}
+			if err := con.Close(); err != nil {
+				panic(err)
+			}
 		}
 	}
 }
 
-func buildProxyConfigFromConfig(conf *ProxyConfig) *MatcherProxy {
-	if conf.Match == nil || conf.Proxy == nil {
+func handleMatcherProxy(mp *MatcherProxy) {
+
+}
+
+/**
+builds proxy config from matcher and proxy
+*/
+func buildProxyConfigFromConfig(match *Match, proxy *Proxy) *MatcherProxy {
+	if match == nil || proxy == nil {
 		panic("invalid configuration must configure matcher and proxy")
 	}
 
-	if conf.Match.Type == "path" {
+	if match.Type == "path" {
 		return &MatcherProxy{
-			Matcher: NewSimplePathMatcher(conf.Match.PathMatch.MatchValue, conf.Match.PathMatch.MatchType),
-			Proxy:   conf.Proxy,
+			Matcher: NewSimplePathMatcher(match.PathMatch.MatchValue, match.PathMatch.MatchType),
+			Proxy:   proxy,
 		}
 	}
-
 	// todo incomplete
 	return nil
 }

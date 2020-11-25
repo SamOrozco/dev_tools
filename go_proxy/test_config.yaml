@@ -1,8 +1,10 @@
-match:
-  type: 'path'
-  path_match:
-    match_value: '/test'
-    match_type: 'ew'
-proxy:
-  host: localhost
-  port: 9006
+port: 9007
+proxies:
+  - match:
+      type: 'path'
+      path_match:
+        match_value: '/test'
+        match_type: 'sw'
+    proxy:
+      host: google.com
+      port: 80
