@@ -8,3 +8,11 @@ proxies:
     proxy:
       host: google.com
       port: 80
+  - match:
+      type: 'path'
+      path_match:
+        match_value: '/samo'
+        match_type: 'ew'
+    proxy:
+      host: news.ycombinator.com
+      port: 80
