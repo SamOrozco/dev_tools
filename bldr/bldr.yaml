@@ -1,0 +1,7 @@
+root_dir: '/Users/samuelorozco/dev_tools'
+components:
+  - name: 'go-proxy'
+    location: 'go_proxy'
+    build:
+      commands:
+        - exec: "go build -o mac_proxy ."

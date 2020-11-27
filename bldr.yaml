@@ -1,0 +1,26 @@
+components:
+  - name: 'tp'
+    location: 'tp_git'
+    build:
+      commands:
+        - exec: "zsh ./build.sh"
+  - name: 'pf'
+    location: 'p_finder'
+    build:
+      commands:
+        - exec: "zsh ./build.sh"
+  - name: 'proxy'
+    location: 'go_proxy'
+    build:
+      commands:
+        - exec: "zsh ./build.sh"
+  - name: 'cliw'
+    location: 'cli_watcher'
+    build:
+      commands:
+        - exec: "zsh ./build.sh"
+  - name: 'bldr'
+    location: 'bldr'
+    build:
+      commands:
+        - exec: "zsh ./build.sh"
