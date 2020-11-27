@@ -17,6 +17,7 @@ import (
 type AppOptions struct {
 	DirsOnly              bool
 	FilesOnly             bool
+	NonContents           bool
 	VerboseLogging        bool
 	ExcludeFileExtensions map[string]bool
 	IncludeFileExtensions map[string]bool
@@ -34,6 +35,7 @@ var (
 	DirsOnly              bool   // search dirs only flag name
 	VerboseLogging        bool   // enable verbose logging
 	FilesOnly             bool   // enable verbose logging
+	NonContents           bool   // do not search contents of files if flag enabled
 	ExcludedFileExtension string // csv of excluded file extensions
 	IncludedFileExtension string // csv of only file extensions we want to search for
 	MaxDepth              int
@@ -53,6 +55,7 @@ var (
 			pfDir(pattern, findDir, &AppOptions{
 				DirsOnly:              DirsOnly,
 				VerboseLogging:        VerboseLogging,
+				NonContents:           NonContents,
 				ExcludeFileExtensions: convertCsvToFlagMap(ExcludedFileExtension),
 				IncludeFileExtensions: convertCsvToFlagMap(IncludedFileExtension),
 				MaxDepth:              MaxDepth,
@@ -66,6 +69,7 @@ func main() {
 	rootCmd.PersistentFlags().BoolVarP(&DirsOnly, "dirs", "d", false, "find in dir names only")
 	rootCmd.PersistentFlags().BoolVarP(&VerboseLogging, "verbose", "v", false, "enable verbose logging")
 	rootCmd.PersistentFlags().BoolVarP(&FilesOnly, "files", "f", false, "find in files only")
+	rootCmd.PersistentFlags().BoolVarP(&NonContents, "non-contents", "n", false, "do not search in file contents if true")
 	rootCmd.PersistentFlags().StringVarP(&ExcludedFileExtension, "excluded-file-extensions", "x", "", "comma separated list of excluded file extensions")
 	rootCmd.PersistentFlags().StringVarP(&IncludedFileExtension, "included-file-extensions", "i", "", "comma separated list of included file extensions")
 	rootCmd.PersistentFlags().IntVarP(&MaxDepth, "max-depth", "m", 4, "max directory depth we will search defaults 30")
@@ -188,6 +192,12 @@ func searchFileAsync(
 	// max depth check
 	if depth >= options.MaxDepth {
 		LogHitMaxDepth(filePath)
+		wg.Done()
+		return
+	}
+
+	// excluding search file contents because of flag
+	if options.NonContents {
 		wg.Done()
 		return
 	}
