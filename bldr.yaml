@@ -21,6 +21,3 @@ components:
         - exec: "zsh ./build.sh"
   - name: 'bldr'
     location: 'bldr'
-    build:
-      commands:
-        - exec: "zsh ./build.sh"

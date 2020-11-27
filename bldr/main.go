@@ -18,9 +18,10 @@ type Options struct {
 }
 
 var (
-	VerboseLogging bool   // search dirs only flag name
-	ComponentsCSV  string // only build component with given names, csv on names
-	rootCmd        = &cobra.Command{
+	DefaultConfigFileName string = "bldr.yaml"
+	VerboseLogging        bool   // search dirs only flag name
+	ComponentsCSV         string // only build component with given names, csv on names
+	rootCmd               = &cobra.Command{
 		Use:   "bldr",
 		Short: "project builder",
 		Long:  `build your projects`,
@@ -37,18 +38,11 @@ var (
 				fileName = args[0]
 			}
 
-			data, err := files.ReadBytesFromFile(fileName)
-			if err != nil {
-				panic(err)
-			}
-			config := &Config{}
-			if err := yaml.Unmarshal(data, config); err != nil {
-				panic(err)
-			}
-			Bldr(config, &Options{
+			buildConfigFromFile(fileName, &Options{
 				VerboseLogging: VerboseLogging,
 				ComponentsCSV:  ComponentsCSV,
-			})
+			},
+				".")
 		},
 	}
 )
@@ -65,8 +59,8 @@ func Execute() {
 	}
 }
 
-func Bldr(config *Config, options *Options) {
-	rootDir := "."
+func Bldr(config *Config, options *Options, dir string) {
+	rootDir := dir
 	if len(config.RootDir) > 0 {
 		rootDir = config.RootDir
 	}
@@ -101,11 +95,18 @@ func buildComponent(
 	if !files.FileExists(componentLocation) {
 		invalidComponentLocation(comp, componentLocation)
 	}
+
 	if comp.Build != nil {
 		if options.VerboseLogging {
 			LogStartBuilding(comp.Name)
 		}
 		execCommands(componentLocation, comp.Build.Commands, options)
+	} else {
+		// if user did configure build command for component we expect there to be a build config in directory
+		buildConfigFromFile(
+			files.JoinSegmentsOfFilePath(componentLocation, DefaultConfigFileName),
+			options,
+			componentLocation)
 	}
 	return []string{}
 }
@@ -177,6 +178,24 @@ func execCommand(location string, commands ...string) {
 			panic(err)
 		}
 	}
+}
+
+/**
+ */
+func buildConfigFromFile(
+	loc string,
+	options *Options,
+	dir string,
+) {
+	data, err := files.ReadBytesFromFile(loc)
+	if err != nil {
+		panic(err)
+	}
+	config := &Config{}
+	if err := yaml.Unmarshal(data, config); err != nil {
+		panic(err)
+	}
+	Bldr(config, options, dir)
 }
 
 /**
