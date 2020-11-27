@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"runtime"
 	"strings"
+	"sync"
 )
 
 type Options struct {
@@ -71,12 +72,15 @@ func Bldr(config *Config, options *Options, dir string) {
 
 	componentNamePredicate := getComponentNamePredicate(options.ComponentsCSV)
 
+	wg := sync.WaitGroup{}
 	for i := range config.Components {
 		curComp := config.Components[i]
 		if componentNamePredicate(curComp) {
-			buildComponent(rootDir, curComp, options)
+			wg.Add(1)
+			go buildComponent(rootDir, curComp, options, &wg)
 		}
 	}
+	wg.Wait()
 }
 
 /**
@@ -86,6 +90,7 @@ func buildComponent(
 	location string,
 	comp *Component,
 	options *Options,
+	wg *sync.WaitGroup,
 ) []string {
 	if comp == nil {
 		return []string{}
@@ -108,6 +113,8 @@ func buildComponent(
 			options,
 			componentLocation)
 	}
+
+	wg.Done()
 	return []string{}
 }
 
