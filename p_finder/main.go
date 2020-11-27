@@ -394,5 +394,5 @@ func LogTimeRan(startTime time.Time) {
 	println()
 	println()
 	timeSince := time.Since(startTime)
-	println(color.RedBg(fmt.Sprintf("ran in %dms", timeSince.Milliseconds())))
+	println(color.RedBg(color.White(fmt.Sprintf("ran in %dms", timeSince.Milliseconds()))))
 }
