@@ -54,6 +54,13 @@ func ReadStringFromFile(fileLocation string) (string, error) {
 	return string(data), err
 }
 
+func HasExtension(fileName string) bool {
+	if len(fileName) > 0 {
+		return strings.ContainsRune(fileName, '.')
+	}
+	return false
+}
+
 func IsDir(filePath string) bool {
 	stat, err := os.Stat(filePath)
 	if err != nil {

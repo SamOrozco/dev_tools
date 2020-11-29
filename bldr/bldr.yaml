@@ -1,5 +1,9 @@
+artifact_dir: "C:\\Users\\samue\\projects\\dev_tools\\bin"
 components:
   - name: 'bldr'
     build:
       commands:
-        - exec: "go build -o bldrs ."
+        - exec: "go build -o bldr.exe ."
+      artifacts:
+        - name: "bldr.exe"
+          alias: "test.exe"

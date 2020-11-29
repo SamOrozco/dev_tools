@@ -8,9 +8,9 @@ import (
 	"gopkg.in/yaml.v2"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strings"
-	"sync"
 )
 
 type Options struct {
@@ -70,27 +70,45 @@ func Bldr(config *Config, options *Options, dir string) {
 		panic("no components configured to build")
 	}
 
+	// IMPORTANT where build will write artifacts
+	resolvedArtifactPath := "."
+	var err error
+	if len(config.ArtifactDir) > 0 {
+		if filepath.IsAbs(config.ArtifactDir) {
+			resolvedArtifactPath = config.ArtifactDir
+		} else {
+			if resolvedArtifactPath, err = filepath.Abs(files.JoinSegmentsOfFilePath(resolvedArtifactPath, config.ArtifactDir)); err != nil {
+				panic(err)
+			}
+		}
+	}
+
+	if err := files.CreateDirIfNotExists(resolvedArtifactPath); err != nil {
+		panic(err)
+	}
 	componentNamePredicate := getComponentNamePredicate(options.ComponentsCSV)
 
-	wg := sync.WaitGroup{}
 	for i := range config.Components {
 		curComp := config.Components[i]
 		if componentNamePredicate(curComp) {
-			wg.Add(1)
-			go buildComponent(rootDir, curComp, options, &wg)
+			buildComponent(
+				rootDir,
+				resolvedArtifactPath,
+				curComp,
+				options,
+			)
 		}
 	}
-	wg.Wait()
 }
 
 /**
 
  */
 func buildComponent(
-	location string,
+	location,
+	artifactLocation string,
 	comp *Component,
 	options *Options,
-	wg *sync.WaitGroup,
 ) []string {
 	if comp == nil {
 		return []string{}
@@ -106,6 +124,11 @@ func buildComponent(
 			LogStartBuilding(comp.Name)
 		}
 		execCommands(componentLocation, comp.Build.Commands, options)
+
+		if comp.Build.Artifacts != nil {
+			// copy artifacts to proper location
+			copyArtifacts(comp.Build.Artifacts, location, artifactLocation)
+		}
 	} else {
 		// if user did configure build command for component we expect there to be a build config in directory
 		buildConfigFromFile(
@@ -114,7 +137,6 @@ func buildComponent(
 			componentLocation)
 	}
 
-	wg.Done()
 	return []string{}
 }
 
@@ -183,6 +205,34 @@ func execCommand(location string, commands ...string) {
 		cmd.Stdin = os.Stdin
 		if err := cmd.Run(); err != nil {
 			panic(err)
+		}
+	}
+}
+
+func copyArtifacts(artifacts []*Artifact, curLocation, artifactLocation string) {
+	if artifacts != nil && len(artifacts) > 0 {
+		for i := range artifacts {
+			curArt := artifacts[i]
+			copyArtifact(curArt, curLocation, artifactLocation)
+		}
+	}
+}
+
+func copyArtifact(artifact *Artifact, curLocation, artLocation string) {
+	if artifact != nil {
+		name := artifact.Name
+		artifactPath := files.JoinSegmentsOfFilePath(curLocation, name)
+		if files.FileExists(artifactPath) {
+			finalName := name
+			// set final artifact name if alias
+			if len(artifact.Alias) > 0 {
+				finalName = artifact.Alias
+			}
+
+			// move to artifact dir
+			if err := os.Rename(artifactPath, files.JoinSegmentsOfFilePath(artLocation, finalName)); err != nil {
+				panic(err)
+			}
 		}
 	}
 }

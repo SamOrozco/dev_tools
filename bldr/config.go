@@ -1,8 +1,9 @@
 package main
 
 type Config struct {
-	RootDir    string       `yaml:"root_dir"` // the build will move to this dir to start the build
-	Components []*Component `yaml:"components"`
+	RootDir     string       `yaml:"root_dir"` // the build will move to this dir to start the build
+	Components  []*Component `yaml:"components"`
+	ArtifactDir string       `yaml:"artifact_dir"`
 }
 
 type Component struct {
@@ -24,5 +25,6 @@ type Command struct {
 }
 
 type Artifact struct {
-	Name string `yaml:"name"`
+	Name  string `yaml:"name"`
+	Alias string `yaml:"alias"`
 }
