@@ -91,12 +91,14 @@ func Bldr(config *Config, options *Options, dir string) {
 	for i := range config.Components {
 		curComp := config.Components[i]
 		if componentNamePredicate(curComp) {
+			println(fmt.Sprintf("Start [%d]%s", i, strings.Repeat(".", 20)))
 			buildComponent(
 				rootDir,
 				resolvedArtifactPath,
 				curComp,
 				options,
 			)
+			println(fmt.Sprintf("Done [%d]%s", i, strings.Repeat(".", 20)))
 		}
 	}
 }
@@ -127,7 +129,7 @@ func buildComponent(
 
 		if comp.Build.Artifacts != nil {
 			// copy artifacts to proper location
-			copyArtifacts(comp.Build.Artifacts, location, artifactLocation)
+			copyArtifacts(comp.Build.Artifacts, componentLocation, artifactLocation, options)
 		}
 	} else {
 		// if user did configure build command for component we expect there to be a build config in directory
@@ -166,8 +168,9 @@ func runCommand(
 		execCommandString(location, command.Linux, options)
 	} else if len(command.Mac) > 0 && isMac() {
 		execCommandString(location, command.Mac, options)
+	} else {
+		execCommandString(location, command.Exec, options)
 	}
-	execCommandString(location, command.Exec, options)
 }
 
 func execCommandString(
@@ -209,17 +212,18 @@ func execCommand(location string, commands ...string) {
 	}
 }
 
-func copyArtifacts(artifacts []*Artifact, curLocation, artifactLocation string) {
+func copyArtifacts(artifacts []*Artifact, curLocation, artifactLocation string, options *Options) {
 	if artifacts != nil && len(artifacts) > 0 {
 		for i := range artifacts {
 			curArt := artifacts[i]
-			copyArtifact(curArt, curLocation, artifactLocation)
+			copyArtifact(curArt, curLocation, artifactLocation, options)
 		}
 	}
 }
 
-func copyArtifact(artifact *Artifact, curLocation, artLocation string) {
+func copyArtifact(artifact *Artifact, curLocation, artLocation string, options *Options) {
 	if artifact != nil {
+
 		name := artifact.Name
 		artifactPath := files.JoinSegmentsOfFilePath(curLocation, name)
 		if files.FileExists(artifactPath) {
@@ -230,8 +234,29 @@ func copyArtifact(artifact *Artifact, curLocation, artLocation string) {
 			}
 
 			// move to artifact dir
-			if err := os.Rename(artifactPath, files.JoinSegmentsOfFilePath(artLocation, finalName)); err != nil {
+			dest := files.JoinSegmentsOfFilePath(artLocation, finalName)
+
+			// if artifact is dir we expect to be copying dir
+			// ensure destination is a fully created dir
+			if !files.FileExists(dest) {
+				// todo break out
+				destDir, _ := filepath.Split(dest)
+				if err := os.MkdirAll(destDir, os.ModePerm); err != nil {
+					panic(err)
+				}
+			} else {
+				// removing dir and all contents to make room for new artifact
+				if err := os.RemoveAll(dest); err != nil {
+					panic(err)
+				}
+			}
+
+			if err := os.Rename(artifactPath, dest); err != nil {
 				panic(err)
+			} else {
+				if options.VerboseLogging {
+					println(fmt.Sprintf("copying %s to %s", artifactPath, dest))
+				}
 			}
 		}
 	}

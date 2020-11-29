@@ -1,7 +1,56 @@
+artifact_dir: "C:\\Users\\samue\\bin"
 components:
   - name: 'tp'
     location: 'tp_git'
     build:
+      artifacts:
+        - name: "tp.exe"
+        - name: "tp"
       commands:
         - exec: "go build -o tp ."
           windows: "go build -o tp.exe ."
+  - name: 'bldr'
+    location: 'bldr'
+    build:
+      artifacts:
+        - name: "bldr.exe"
+        - name: "bldr"
+      commands:
+        - exec: "go build -o bldr ."
+          windows: "go build -o bldr.exe ."
+  - name: 'pf'
+    location: 'p_finder'
+    build:
+      artifacts:
+        - name: "pf.exe"
+        - name: "pf"
+      commands:
+        - exec: "go build -o pf ."
+          windows: "go build -o pf.exe ."
+  - name: 'go htp'
+    location: 'htp'
+    build:
+      artifacts:
+        - name: "htp.exe"
+        - name: "htp"
+      commands:
+        - exec: "go build -o htp ."
+          windows: "go build -o htp.exe ."
+  - name: 'go proxy'
+    location: 'go_proxy'
+    build:
+      artifacts:
+        - name: "proxy.exe"
+        - name: "proxy"
+      commands:
+        - exec: "go build -o proxy ."
+          windows: "go build -o proxy.exe ."
+  - name: 'cli watcher'
+    location: 'cli_watcher'
+    build:
+      artifacts:
+        - name: "cliw.exe"
+        - name: "cliw"
+      commands:
+        - exec: "go build -o cliw ."
+          windows: "go build -o cliw.exe ."

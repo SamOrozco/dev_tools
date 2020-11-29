@@ -1,4 +1,3 @@
-artifact_dir: "C:\\Users\\samue\\projects\\dev_tools\\bin"
 components:
   - name: 'bldr'
     build:
