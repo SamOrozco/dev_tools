@@ -1,9 +1,11 @@
 package main
 
 import (
+	"dev_tools/files"
 	"fmt"
 	"github.com/gen2brain/beeep"
 	"github.com/spf13/cobra"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
@@ -40,11 +42,26 @@ func Execute() {
 func RunWatcher(args []string) {
 	commandString := strings.Join(args, " ")
 	cmd := exec.Command(args[0], args[1:]...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+
+	// cmd write to standard out and a file
+	logFile, fileName, err := GetAndCreateLogFile(commandString)
+	defer logFile.Close()
+	var stdOutWriter io.Writer
+	var stdErrWriter io.Writer
+	if err == nil {
+		println(fmt.Sprintf("writing output to %s", fileName))
+		stdOutWriter = io.MultiWriter(os.Stdout, logFile)
+		stdErrWriter = io.MultiWriter(os.Stderr, logFile)
+	} else {
+		stdOutWriter = os.Stdout
+		stdErrWriter = os.Stderr
+	}
+
+	cmd.Stdout = stdOutWriter
+	cmd.Stderr = stdErrWriter
 	cmd.Stdin = os.Stdin
 
-	err := cmd.Run()
+	err = cmd.Run()
 	if err != nil {
 		err = beeep.Alert("Error", fmt.Sprintf("There was an error running (%s)", commandString), "assets/warning.png")
 		if err != nil {
@@ -58,4 +75,15 @@ func RunWatcher(args []string) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func GetAndCreateLogFile(cmdString string) (*os.File, string, error) {
+	fileString := strings.ReplaceAll(cmdString, " ", "_") + ".log"
+	if files.FileExists(fileString) {
+		if err := os.Remove(fileString); err != nil {
+			panic(err)
+		}
+	}
+	file, err := os.Create(fileString)
+	return file, fileString, err
 }

@@ -1,4 +1,4 @@
-artifact_dir: "C:\\Users\\samue\\bin"
+artifact_dir: "/Users/samuelorozco/bin"
 components:
   - name: 'tp'
     location: 'tp_git'
