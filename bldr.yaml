@@ -45,7 +45,7 @@ components:
       commands:
         - exec: "go build -o proxy ."
           windows: "go build -o proxy.exe ."
-  - name: 'cli watcher'
+  - name: 'cliw'
     location: 'cli_watcher'
     build:
       artifacts:
