@@ -54,3 +54,12 @@ components:
       commands:
         - exec: "go build -o cliw ."
           windows: "go build -o cliw.exe ."
+  - name: 'jit'
+    location: 'jit'
+    build:
+      artifacts:
+        - name: "jit.exe"
+        - name: "jit"
+      commands:
+        - exec: "go build -o jit ."
+          windows: "go build -o jit.exe ."

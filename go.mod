@@ -5,6 +5,7 @@ go 1.15
 require (
 	github.com/fatih/color v1.7.0
 	github.com/gen2brain/beeep v0.0.0-20200526185328-e9c15c258e28
+	github.com/go-vgo/robotgo v0.92.1
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/google/uuid v1.1.2
