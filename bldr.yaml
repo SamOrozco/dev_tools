@@ -63,3 +63,30 @@ components:
       commands:
         - exec: "go build -o jit ."
           windows: "go build -o jit.exe ."
+  - name: 'ss'
+    location: 'sql_star'
+    build:
+      artifacts:
+        - name: "ss.exe"
+        - name: "ss"
+      commands:
+        - exec: "go build -o ss ."
+          windows: "go build -o ss.exe ."
+  - name: 'ts'
+    location: 'time_series'
+    build:
+      artifacts:
+        - name: "ts.exe"
+        - name: "ts"
+      commands:
+        - exec: "go build -o ts ."
+          windows: "go build -o ts.exe ."
+  - name: 'remind'
+    location: 'simple_reminder'
+    build:
+      artifacts:
+        - name: "remind.exe"
+        - name: "remind"
+      commands:
+        - exec: "go build -o remind ."
+          windows: "go build -o remind.exe ."

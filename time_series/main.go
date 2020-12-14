@@ -135,9 +135,11 @@ func LoadDataPointsFromFile(fileName string) []*Point {
 		panic(err)
 	}
 	lines := strings.Split(val, "\n")
-	result := make([]*Point, len(lines))
+	result := make([]*Point, 0)
 	for i := range lines {
-		result[i] = GetPointFromLine(lines[i], i)
+		if len(lines[i]) > 0 {
+			result = append(result, GetPointFromLine(lines[i], i))
+		}
 	}
 	return result
 }
