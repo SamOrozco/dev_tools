@@ -30,5 +30,5 @@ func strToUpper(val string) string {
 	if len(val) == 1 {
 		return strings.ToUpper(val)
 	}
-	return strings.ToUpper(val[0:]) + val[1:]
+	return strings.ToUpper(val[:1]) + val[1:]
 }
